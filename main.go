@@ -33,7 +33,7 @@ func main() {
 
 	fmt.Println("Server Started!") // todo: add this log after the server starts
 
-	err := http.ListenAndServe(":5050", r)
+	err := http.ListenAndServe(":5051", r)
 
 	if err != nil {
 		log.Fatalf(":( Server Start Error: %s", err)

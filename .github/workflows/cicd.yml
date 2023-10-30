@@ -24,6 +24,7 @@ jobs:
         with:
           version: v1.54
   build:
+    needs: lint
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code

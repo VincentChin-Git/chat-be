@@ -28,7 +28,7 @@ func GetConfig() Config {
 	redisPass := os.Getenv("RedisPass")
 	tokenSecret := os.Getenv("TokenSecret")
 
-	fmt.Println(databaseName)
+	fmt.Println(databaseName, databaseURL)
 	temp := Config{DatabaseURL: databaseURL, DatabaseName: databaseName, RedisAddr: redisAddr, RedisPass: redisPass, TokenSecret: tokenSecret}
 
 	return temp

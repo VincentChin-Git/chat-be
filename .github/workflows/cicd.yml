@@ -59,12 +59,12 @@ jobs:
           chmod 600 key.pem
       - name: Stop running container
         run: |
-          ssh -o StrictHostKeyChecking=no -i key.pem ${{ secrets.EC2_URL }} 'sudo docker stop ${{ secrets.IMAGE_NAME }} || true'
-          ssh -o StrictHostKeyChecking=no -i key.pem ${{ secrets.EC2_URL }} 'sudo docker rm ${{ secrets.IMAGE_NAME }} || true'
+          ssh -o StrictHostKeyChecking=no -i key.pem ${{ secrets.EC2_URL }} 'sudo docker stop ${{ secrets.CONTAINER_NAME }} || true'
+          ssh -o StrictHostKeyChecking=no -i key.pem ${{ secrets.EC2_URL }} 'sudo docker rm ${{ secrets.CONTAINER_NAME }} || true'
           ssh -o StrictHostKeyChecking=no -i key.pem ${{ secrets.EC2_URL }} 'sudo docker image prune --force'
       - name: Pull Docker image
         run: |
           ssh -o StrictHostKeyChecking=no -i key.pem ${{ secrets.EC2_URL }} 'sudo docker pull ${{ env.DOCKER_USERNAME }}/${{ secrets.IMAGE_NAME }}:chat'
       - name: Run new container
         run: |
-          ssh -o StrictHostKeyChecking=no -i key.pem ${{ secrets.EC2_URL }} 'sudo docker run -d --name ${{ secrets.IMAGE_NAME }} --env-file .env.local -p ${{ secrets.EC2_PORT }} ${{ env.DOCKER_USERNAME }}/${{ secrets.IMAGE_NAME }}:chat'
+          ssh -o StrictHostKeyChecking=no -i key.pem ${{ secrets.EC2_URL }} 'sudo docker run -d --name ${{ secrets.CONTAINER_NAME }} --env-file .env.chat -p ${{ secrets.EC2_PORT }} ${{ env.DOCKER_USERNAME }}/${{ secrets.IMAGE_NAME }}:chat'

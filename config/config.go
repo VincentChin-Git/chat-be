@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -18,7 +19,7 @@ func GetConfig() Config {
 	err := godotenv.Load(".env.local")
 
 	if err != nil {
-		panic(err)
+		fmt.Println("No ENV File")
 	}
 
 	databaseURL := os.Getenv("DatabaseURL")

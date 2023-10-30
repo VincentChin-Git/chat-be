@@ -68,4 +68,4 @@ jobs:
           ssh -o StrictHostKeyChecking=no -i key.pem ${{ secrets.EC2_URL }} 'sudo docker pull ${{ env.DOCKER_USERNAME }}/${{ secrets.IMAGE_NAME }}:chat'
       - name: Run new container
         run: |
-          ssh -o StrictHostKeyChecking=no -i key.pem ${{ secrets.EC2_URL }} 'sudo docker run -d --name ${{ secrets.CONTAINER_NAME }} --env-file .env.chat -p ${{ secrets.EC2_PORT }} ${{ env.DOCKER_USERNAME }}/${{ secrets.IMAGE_NAME }}:chat'
+          ssh -o StrictHostKeyChecking=no -i key.pem ${{ secrets.EC2_URL }} 'sudo docker run -d --name ${{ secrets.CONTAINER_NAME }} --env-file .env.local -p ${{ secrets.EC2_PORT }} ${{ env.DOCKER_USERNAME }}/${{ secrets.IMAGE_NAME }}:chat'

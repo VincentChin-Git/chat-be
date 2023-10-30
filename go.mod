@@ -1,4 +1,4 @@
-module client-server-go
+module chat-be
 
 go 1.21.3
 

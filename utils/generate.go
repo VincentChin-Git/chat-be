@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"client-server-go/config"
+	"chat-be/config"
 	"crypto/rand"
 	"errors"
 	"fmt"

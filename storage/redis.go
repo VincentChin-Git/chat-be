@@ -1,7 +1,7 @@
 package storage
 
 import (
-	"client-server-go/config"
+	"chat-be/config"
 	"context"
 	"time"
 

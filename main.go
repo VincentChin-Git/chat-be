@@ -1,9 +1,9 @@
 package main
 
 import (
-	"client-server-go/middleware"
-	"client-server-go/routes"
-	"client-server-go/storage"
+	"chat-be/middleware"
+	"chat-be/routes"
+	"chat-be/storage"
 	"fmt"
 	"log"
 	"net/http"

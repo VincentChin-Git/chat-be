@@ -8,11 +8,10 @@ import (
 )
 
 type Config struct {
-	DatabaseURL  string
-	DatabaseName string
-	RedisAddr    string
-	RedisPass    string
-	TokenSecret  string
+	DatabaseURL string
+	RedisAddr   string
+	RedisPass   string
+	TokenSecret string
 }
 
 func GetConfig() Config {
@@ -29,7 +28,7 @@ func GetConfig() Config {
 	tokenSecret := os.Getenv("TokenSecret")
 
 	fmt.Println(databaseName, databaseURL)
-	temp := Config{DatabaseURL: databaseURL, DatabaseName: databaseName, RedisAddr: redisAddr, RedisPass: redisPass, TokenSecret: tokenSecret}
+	temp := Config{DatabaseURL: databaseURL, RedisAddr: redisAddr, RedisPass: redisPass, TokenSecret: tokenSecret}
 
 	return temp
 }

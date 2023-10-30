@@ -108,24 +108,42 @@ func Login(param string, password string) (string, error) {
 	return token, nil
 }
 
-func GetUserInfoByToken(token string) (models.User, error) {
+type getUserInfoRes struct {
+	UserData models.User `json:"userData"`
+	Token    string      `json:"token"`
+}
+
+func GetUserInfoByToken(token string) (getUserInfoRes, error) {
+	blankData := getUserInfoRes{
+		UserData: models.User{},
+		Token:    "",
+	}
 	parsedStr, err := utils.DecodeToken(token)
 	if err != nil {
-		return models.User{}, errors.New("")
+		return blankData, errors.New("")
 	}
 	lastInd := strings.LastIndex(parsedStr, "_")
+	if lastInd == -1 {
+		return blankData, errors.New("")
+	}
 
 	username, mobile := parsedStr[:lastInd], parsedStr[lastInd+1:]
 
 	userDataCur := storage.ClientDatabase.Collection("users").FindOne(context.Background(), []bson.M{{"mobile": mobile}, {"username": username}})
 	if userDataCur.Err() != nil {
-		return models.User{}, errors.New("")
+		return blankData, errors.New("")
 	}
 	var userData models.User
 	err = userDataCur.Decode(&userData)
 	if err != nil {
-		return models.User{}, errors.New("")
+		return blankData, errors.New("")
 	}
 
-	return userData, nil
+	// refresh token
+	newToken, err := utils.GenerateToken(userData.Username + "_" + userData.Mobile)
+	if err != nil {
+		return blankData, errors.New("")
+	}
+
+	return getUserInfoRes{UserData: userData, Token: newToken}, nil
 }

@@ -7,7 +7,7 @@ import (
 func MainRouter() chi.Router {
 	r := chi.NewRouter()
 
-	r.Mount("/api", testRoutes())
+	r.Mount("/user", userRoutes())
 
 	return r
 }

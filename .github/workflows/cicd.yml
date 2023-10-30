@@ -1,0 +1,70 @@
+name: Go CD AWS
+on:
+  push:
+    branches:
+      - main
+env:
+  DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+  DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+  SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v4
+        with:
+          go-version: "1.21"
+          cache: false
+      - name: go install
+        run: go get .
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.54
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          dockerfile: ./Dockerfile
+          tags: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.IMAGE_NAME }}:chat
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ env.DOCKER_USERNAME }}
+          password: ${{ env.DOCKER_PASSWORD }}
+      - name: Set permissions for private key
+        run: |
+          echo "${{ env.SSH_PRIVATE_KEY }}" > key.pem
+          chmod 600 key.pem
+      - name: Stop running container
+        run: |
+          ssh -o StrictHostKeyChecking=no -i key.pem ${{ secrets.EC2_URL }} 'sudo docker stop ${{ secrets.IMAGE_NAME }} || true'
+          ssh -o StrictHostKeyChecking=no -i key.pem ${{ secrets.EC2_URL }} 'sudo docker rm ${{ secrets.IMAGE_NAME }} || true'
+          ssh -o StrictHostKeyChecking=no -i key.pem ${{ secrets.EC2_URL }} 'sudo docker image prune --force'
+      - name: Pull Docker image
+        run: |
+          ssh -o StrictHostKeyChecking=no -i key.pem ${{ secrets.EC2_URL }} 'sudo docker pull ${{ env.DOCKER_USERNAME }}/${{ secrets.IMAGE_NAME }}:chat'
+      - name: Run new container
+        run: |
+          ssh -o StrictHostKeyChecking=no -i key.pem ${{ secrets.EC2_URL }} 'sudo docker run -d --name ${{ secrets.IMAGE_NAME }} --env-file .env.local -p ${{ secrets.EC2_PORT }} ${{ env.DOCKER_USERNAME }}/${{ secrets.IMAGE_NAME }}:chat'

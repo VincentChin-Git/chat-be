@@ -1,0 +1,8 @@
+/tmp
+
+.env
+.env.development
+.env.local
+.env.sit
+.env.production
+.DS_Store

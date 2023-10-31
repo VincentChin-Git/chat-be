@@ -30,8 +30,14 @@ func JsonResponse(w http.ResponseWriter, data interface{}, status int) {
 	}
 }
 
-func JsonResponseError(w http.ResponseWriter, errCode string, errMessage string) {
-	realErr := "Please try again later."
+func JsonResponseError(w http.ResponseWriter, errCode string, errMessage string, status int) {
+	var realErr string
+	if status == http.StatusBadRequest {
+		realErr = "Please try again later"
+	} else if status == http.StatusUnauthorized {
+		realErr = "User unauthorized"
+	}
+
 	if errMessage != "" {
 		realErr = errMessage
 	}
@@ -39,7 +45,7 @@ func JsonResponseError(w http.ResponseWriter, errCode string, errMessage string)
 	responseJSON, errJSON := json.Marshal(response)
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusBadRequest)
+	w.WriteHeader(status)
 	_, errWrite := w.Write(responseJSON)
 	if errWrite != nil || errJSON != nil {
 		http.Error(w, "Server Error", http.StatusInternalServerError)

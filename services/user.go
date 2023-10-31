@@ -6,6 +6,7 @@ import (
 	"chat-be/utils"
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -39,12 +40,6 @@ func Signup(mobile string, username string, password string, nickname string) (s
 		return "", errors.New("Username exist")
 	}
 
-	// generate token
-	userToken, err := utils.GenerateToken(username + "_" + mobile)
-	if err != nil {
-		return "", errors.New("")
-	}
-
 	// generate password
 	passwordByte := []byte(password)
 	passwordEncoded, err := bcrypt.GenerateFromPassword(passwordByte, bcrypt.DefaultCost)
@@ -53,13 +48,14 @@ func Signup(mobile string, username string, password string, nickname string) (s
 	}
 
 	userTemplate := models.User{
-		Username:  username,
-		Mobile:    mobile,
-		Password:  passwordEncoded,
-		Nickname:  nickname,
-		Status:    "active",
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		Username:   username,
+		Mobile:     mobile,
+		Password:   passwordEncoded,
+		Nickname:   nickname,
+		Status:     "active",
+		LastActive: time.Now(),
+		CreatedAt:  time.Now(),
+		UpdatedAt:  time.Now(),
 	}
 
 	// add user
@@ -69,6 +65,12 @@ func Signup(mobile string, username string, password string, nickname string) (s
 	}
 
 	if result.InsertedID != nil {
+
+		// generate token
+		userToken, err := utils.GenerateToken(result.InsertedID.(primitive.ObjectID).Hex())
+		if err != nil {
+			return "", errors.New("")
+		}
 		return userToken, nil
 	}
 
@@ -100,7 +102,7 @@ func Login(param string, password string) (string, error) {
 		return "", errors.New("Invalid Login Info")
 	}
 
-	token, err := utils.GenerateToken(userInfo.Username + "_" + userInfo.Mobile)
+	token, err := utils.GenerateToken(userInfo.Id.Hex())
 	if err != nil {
 		return "", errors.New("")
 	}
@@ -140,10 +142,82 @@ func GetUserInfoByToken(token string) (getUserInfoRes, error) {
 	}
 
 	// refresh token
-	newToken, err := utils.GenerateToken(userData.Username + "_" + userData.Mobile)
+	newToken, err := utils.GenerateToken(userData.Id.Hex())
+	if err != nil {
+		return blankData, errors.New("")
+	}
+
+	err = UpdateUserInfo(userData.Id.String(), models.User{})
 	if err != nil {
 		return blankData, errors.New("")
 	}
 
 	return getUserInfoRes{UserData: userData, Token: newToken}, nil
+}
+
+func UpdateUserInfo(_id string, userinfo models.User) error {
+	if _id == "" {
+		return errors.New("Invalid Info")
+	}
+	userId := utils.ToObjectId(_id)
+
+	userDoc := storage.ClientDatabase.Collection("users")
+
+	updatedField := models.User{}
+	if userinfo.Nickname != "" {
+		updatedField.Nickname = userinfo.Nickname
+		updatedField.UpdatedAt = time.Now()
+	}
+	if userinfo.Avatar != "" {
+		updatedField.Avatar = userinfo.Avatar
+		updatedField.UpdatedAt = time.Now()
+	}
+	if userinfo.Describe != "" {
+		updatedField.Describe = userinfo.Describe
+		updatedField.UpdatedAt = time.Now()
+	}
+	updatedField.LastActive = time.Now()
+
+	result, err := userDoc.UpdateByID(context.Background(), userId, updatedField)
+	if err != nil {
+		return errors.New("")
+	}
+	fmt.Println("Updated: ", result.ModifiedCount, updatedField)
+	return nil
+}
+
+func ChangePassword(_id string, oldPass string, newPass string) error {
+	if _id == "" || oldPass == "" || newPass == "" {
+		return errors.New("Invalid Info")
+	}
+	userDoc := storage.ClientDatabase.Collection("users")
+	userCur := userDoc.FindOne(context.Background(), bson.M{"_id": utils.ToObjectId(_id)})
+	if userCur.Err() != nil {
+		return errors.New("Invalid Info")
+	}
+
+	var userInfo models.User
+	err := userCur.Decode(&userInfo)
+	if err != nil {
+		return errors.New("")
+	}
+
+	oldPassByte := []byte(oldPass)
+	if bcrypt.CompareHashAndPassword(userInfo.Password, oldPassByte) != nil {
+		return errors.New("Invalid Password")
+	}
+
+	// generate password
+	newPassByte := []byte(newPass)
+	passwordEncoded, err := bcrypt.GenerateFromPassword(newPassByte, bcrypt.DefaultCost)
+	if err != nil {
+		return errors.New("")
+	}
+
+	_, err = userDoc.UpdateByID(context.Background(), utils.ToObjectId(_id), bson.M{"password": passwordEncoded})
+	if err != nil {
+		return errors.New("")
+	}
+
+	return nil
 }

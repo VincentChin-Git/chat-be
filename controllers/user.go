@@ -1,11 +1,13 @@
 package controllers
 
 import (
+	"chat-be/models"
 	"chat-be/services"
 	"chat-be/utils"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 )
 
 type SignUpType struct {
@@ -20,7 +22,7 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&ctx)
 	if err != nil {
 		fmt.Println(err)
-		utils.JsonResponseError(w, "999999", "")
+		utils.JsonResponseError(w, "999999", "", http.StatusBadRequest)
 		return
 	}
 
@@ -29,7 +31,7 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		utils.JsonResponse(w, result, http.StatusOK)
 	} else {
-		utils.JsonResponseError(w, "999999", err.Error())
+		utils.JsonResponseError(w, "999999", err.Error(), http.StatusBadRequest)
 	}
 }
 
@@ -43,7 +45,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&ctx)
 	if err != nil {
 		fmt.Println(err)
-		utils.JsonResponseError(w, "999999", "")
+		utils.JsonResponseError(w, "999999", "", http.StatusBadRequest)
 		return
 	}
 
@@ -52,28 +54,72 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		utils.JsonResponse(w, result, http.StatusOK)
 	} else {
-		utils.JsonResponseError(w, "999999", err.Error())
+		utils.JsonResponseError(w, "999999", err.Error(), http.StatusBadRequest)
 	}
-}
-
-type GetUserInfoByTokenType struct {
-	Token string `json:"token"`
 }
 
 func GetUserInfoByToken(w http.ResponseWriter, r *http.Request) {
-	var ctx GetUserInfoByTokenType
-	err := json.NewDecoder(r.Body).Decode(&ctx)
-	if err != nil {
-		fmt.Println(err)
-		utils.JsonResponseError(w, "999999", "")
-		return
-	}
+	reqToken := r.Header.Get("Authorization")
+	token := strings.Split(reqToken, "Bearer ")[1]
 
-	result, err := services.GetUserInfoByToken(ctx.Token)
+	result, err := services.GetUserInfoByToken(token)
 
 	if err == nil {
 		utils.JsonResponse(w, result, http.StatusOK)
 	} else {
-		utils.JsonResponseError(w, "999999", err.Error())
+		utils.JsonResponseError(w, "999999", err.Error(), http.StatusBadRequest)
+	}
+}
+
+func UpdateUserInfo(w http.ResponseWriter, r *http.Request) {
+	var userInfo models.User
+	err := json.NewDecoder(r.Body).Decode(&userInfo)
+	if err != nil {
+		fmt.Println(err)
+		utils.JsonResponseError(w, "999999", "", http.StatusBadRequest)
+		return
+	}
+	_id, ok := r.Context().Value("parsedId").(string)
+
+	if !ok {
+		utils.JsonResponseError(w, "999999", err.Error(), http.StatusBadRequest)
+		return
+	}
+	err = services.UpdateUserInfo(_id, userInfo)
+
+	if err == nil {
+		utils.JsonResponse(w, "", http.StatusOK)
+	} else {
+		utils.JsonResponseError(w, "999999", err.Error(), http.StatusBadRequest)
+	}
+}
+
+type ChangePasswordType struct {
+	OldPass string `json:"oldPass"`
+	NewPass string `json:"newPass"`
+}
+
+func ChangePassword(w http.ResponseWriter, r *http.Request) {
+	var ctx ChangePasswordType
+	err := json.NewDecoder(r.Body).Decode(&ctx)
+	if err != nil {
+		fmt.Println(err)
+		utils.JsonResponseError(w, "999999", "", http.StatusBadRequest)
+		return
+	}
+
+	_id, ok := r.Context().Value("parsedId").(string)
+
+	if !ok {
+		utils.JsonResponseError(w, "999999", err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err = services.ChangePassword(_id, ctx.OldPass, ctx.NewPass)
+
+	if err == nil {
+		utils.JsonResponse(w, "", http.StatusOK)
+	} else {
+		utils.JsonResponseError(w, "999999", err.Error(), http.StatusBadRequest)
 	}
 }

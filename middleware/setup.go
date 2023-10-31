@@ -20,6 +20,7 @@ func SetupMiddleware(r *chi.Mux) *chi.Mux {
 	}))
 
 	r.Use(middleware.Logger)
+	r.Use(authorizeToken)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.RequestID)
 

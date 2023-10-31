@@ -41,7 +41,7 @@ func GetMsgs(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func updateMsgStatus(w http.ResponseWriter, r *http.Request) {
+func UpdateMsgStatus(w http.ResponseWriter, r *http.Request) {
 	var ctx struct {
 		Id     string `json:"_id,omitempty"`
 		Status string `json:"status,omitempty"`

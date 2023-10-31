@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"chat-be/middleware"
 	"chat-be/models"
 	"chat-be/services"
 	"chat-be/utils"
@@ -79,7 +80,7 @@ func UpdateUserInfo(w http.ResponseWriter, r *http.Request) {
 		utils.JsonResponseError(w, "999999", "", http.StatusBadRequest)
 		return
 	}
-	_id, ok := r.Context().Value("parsedId").(string)
+	_id, ok := r.Context().Value(middleware.ContextKey("parsedId")).(string)
 
 	if !ok {
 		utils.JsonResponseError(w, "999999", err.Error(), http.StatusBadRequest)
@@ -108,7 +109,7 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_id, ok := r.Context().Value("parsedId").(string)
+	_id, ok := r.Context().Value(middleware.ContextKey("parsedId")).(string)
 
 	if !ok {
 		utils.JsonResponseError(w, "999999", err.Error(), http.StatusBadRequest)

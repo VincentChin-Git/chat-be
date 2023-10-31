@@ -8,9 +8,9 @@ import (
 	"strings"
 )
 
-type contextKey string
+type ContextKey string
 
-const tokenKey = contextKey("parsedId")
+const TokenKey = ContextKey("parsedId")
 
 func authorizeToken(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -41,7 +41,7 @@ func authorizeToken(next http.Handler) http.Handler {
 
 		fmt.Println("_id:", result)
 
-		r = r.WithContext(context.WithValue(r.Context(), tokenKey, result))
+		r = r.WithContext(context.WithValue(r.Context(), TokenKey, result))
 
 		next.ServeHTTP(w, r)
 	})

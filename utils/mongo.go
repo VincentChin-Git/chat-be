@@ -14,3 +14,7 @@ func ToObjectId(s string) primitive.ObjectID {
 	}
 	return objId
 }
+
+func ToSkipRow(page int, pageSize int) int {
+	return (page - 1) * pageSize
+}

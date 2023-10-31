@@ -9,6 +9,7 @@ func MainRouter() chi.Router {
 
 	r.Mount("/user", userRoutes())
 	r.Mount("/contact", contactRoutes())
+	r.Mount("/msg", msgRoutes())
 
 	return r
 }

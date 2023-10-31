@@ -13,7 +13,6 @@ func userRoutes() chi.Router {
 	r.Get("/getUserInfoByToken", controllers.GetUserInfoByToken)
 	r.Post("/updateUserInfo", controllers.UpdateUserInfo)
 	r.Post("/changePassword", controllers.ChangePassword)
-	r.Get("/getContact", controllers.GetContact)
 
 	return r
 }

@@ -1,17 +1,33 @@
 package services
 
 import (
+	"chat-be/models"
 	"chat-be/storage"
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func GetContact(_id string) ([]ContactElemRes, error) {
+type contactElem struct {
+	ContactId   primitive.ObjectID `json:"contactId,omitempty" bson:"contactId,omitempty"`
+	ContactInfo models.User        `json:"contactInfo,omitempty" bson:"contactInfo,omitempty"`
+}
+
+type ContactElemRes struct {
+	ContactId  primitive.ObjectID `json:"contactId,omitempty" bson:"contactId,omitempty"`
+	Mobile     string             `json:"mobile,omitempty" bson:"mobile,omitempty"`
+	Nickname   string             `json:"nickname,omitempty" bson:"nickname,omitempty"`
+	Avatar     string             `json:"avatar,omitempty" bson:"avatar,omitempty"`
+	Describe   string             `json:"describe,omitempty" bson:"describe,omitempty"`
+	LastActive time.Time          `json:"lastActive,omitempty" bson:"lastActive,omitempty"`
+}
+
+func GetContact(_id string, skip int, limit int) ([]ContactElemRes, error) {
 	contactDoc := storage.ClientDatabase.Collection("contacts")
 
 	// get contact list and populate each row with corresponding user info
@@ -41,7 +57,17 @@ func GetContact(_id string) ([]ContactElemRes, error) {
 			},
 		},
 	}
-	cur, err := contactDoc.Aggregate(context.Background(), mongo.Pipeline{matchStage, lookupStage, unwindStage})
+	skipStage := bson.D{
+		primitive.E{
+			Key: "$skip", Value: skip,
+		},
+	}
+	limitStage := bson.D{
+		primitive.E{
+			Key: "$limit", Value: limit,
+		},
+	}
+	cur, err := contactDoc.Aggregate(context.Background(), mongo.Pipeline{matchStage, skipStage, limitStage, lookupStage, unwindStage})
 	if err != nil {
 		fmt.Println("errGetContactList", err.Error())
 		return nil, errors.New("")

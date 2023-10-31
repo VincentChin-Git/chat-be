@@ -5,6 +5,7 @@ import (
 	"chat-be/services"
 	"chat-be/utils"
 	"net/http"
+	"strconv"
 )
 
 func GetContact(w http.ResponseWriter, r *http.Request) {
@@ -14,7 +15,16 @@ func GetContact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := services.GetContact(_id)
+	page, errPage := strconv.Atoi(r.URL.Query().Get("page"))
+	pageSize, errPageSize := strconv.Atoi(r.URL.Query().Get("pageSize"))
+
+	skip := utils.ToSkipRow(page, pageSize)
+
+	if errPage != nil || errPageSize != nil {
+		utils.JsonResponseError(w, "999999", "Invalid Info", http.StatusBadRequest)
+	}
+
+	result, err := services.GetContact(_id, skip, pageSize)
 
 	if err == nil {
 		utils.JsonResponse(w, result, http.StatusOK)

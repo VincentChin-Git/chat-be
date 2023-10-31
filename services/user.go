@@ -7,7 +7,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -120,18 +119,12 @@ func GetUserInfoByToken(token string) (getUserInfoRes, error) {
 		UserData: models.User{},
 		Token:    "",
 	}
-	parsedStr, err := utils.DecodeToken(token)
+	userId, err := utils.DecodeToken(token)
 	if err != nil {
 		return blankData, errors.New("")
 	}
-	lastInd := strings.LastIndex(parsedStr, "_")
-	if lastInd == -1 {
-		return blankData, errors.New("")
-	}
 
-	username, mobile := parsedStr[:lastInd], parsedStr[lastInd+1:]
-
-	userDataCur := storage.ClientDatabase.Collection("users").FindOne(context.Background(), []bson.M{{"mobile": mobile}, {"username": username}})
+	userDataCur := storage.ClientDatabase.Collection("users").FindOne(context.Background(), []bson.M{{"_id": utils.ToObjectId(userId)}})
 	if userDataCur.Err() != nil {
 		return blankData, errors.New("")
 	}

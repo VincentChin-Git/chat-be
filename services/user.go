@@ -221,3 +221,17 @@ func ChangePassword(_id string, oldPass string, newPass string) error {
 
 	return nil
 }
+
+type contactElem struct {
+	ContactId   primitive.ObjectID `json:"contactId,omitempty" bson:"contactId,omitempty"`
+	ContactInfo models.User        `json:"contactInfo,omitempty" bson:"contactInfo,omitempty"`
+}
+
+type ContactElemRes struct {
+	ContactId  primitive.ObjectID `json:"contactId,omitempty" bson:"contactId,omitempty"`
+	Mobile     string             `json:"mobile,omitempty" bson:"mobile,omitempty"`
+	Nickname   string             `json:"nickname,omitempty" bson:"nickname,omitempty"`
+	Avatar     string             `json:"avatar,omitempty" bson:"avatar,omitempty"`
+	Describe   string             `json:"describe,omitempty" bson:"describe,omitempty"`
+	LastActive time.Time          `json:"lastActive,omitempty" bson:"lastActive,omitempty"`
+}

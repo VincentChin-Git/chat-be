@@ -83,7 +83,7 @@ func UpdateUserInfo(w http.ResponseWriter, r *http.Request) {
 	_id, ok := r.Context().Value(middleware.ContextKey("parsedId")).(string)
 
 	if !ok {
-		utils.JsonResponseError(w, "999999", err.Error(), http.StatusBadRequest)
+		utils.JsonResponseError(w, "999999", "", http.StatusBadRequest)
 		return
 	}
 	err = services.UpdateUserInfo(_id, userInfo)
@@ -112,7 +112,7 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 	_id, ok := r.Context().Value(middleware.ContextKey("parsedId")).(string)
 
 	if !ok {
-		utils.JsonResponseError(w, "999999", err.Error(), http.StatusBadRequest)
+		utils.JsonResponseError(w, "999999", "", http.StatusBadRequest)
 		return
 	}
 

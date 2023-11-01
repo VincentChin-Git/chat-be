@@ -214,3 +214,29 @@ func ChangePassword(_id string, oldPass string, newPass string) error {
 
 	return nil
 }
+
+func SearchUser(mobile string) (models.User, error) {
+	userDoc := storage.ClientDatabase.Collection("user")
+	cur := userDoc.FindOne(context.Background(), bson.M{"mobile": mobile, "status": "active"})
+	if cur.Err() != nil {
+		fmt.Println(cur.Err())
+		return models.User{}, nil
+	}
+
+	var userTemp, userRes models.User
+
+	err := cur.Decode(&userTemp)
+	if err != nil {
+		fmt.Println(err.Error())
+		return models.User{}, errors.New("")
+	}
+
+	userRes.Avatar = userTemp.Avatar
+	userRes.Describe = userTemp.Describe
+	userRes.Nickname = userTemp.Nickname
+	userRes.LastActive = userTemp.LastActive
+	userRes.Id = userTemp.Id
+	userRes.Mobile = userTemp.Mobile
+
+	return userRes, nil
+}

@@ -124,3 +124,16 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 		utils.JsonResponseError(w, "999999", err.Error(), http.StatusBadRequest)
 	}
 }
+
+func SearchUser(w http.ResponseWriter, r *http.Request) {
+	var ctx struct {
+		Mobile string `json:"mobile,omitempty"`
+	}
+
+	user, err := services.SearchUser(ctx.Mobile)
+	if err == nil {
+		utils.JsonResponse(w, user, http.StatusOK)
+	} else {
+		utils.JsonResponseError(w, "999999", err.Error(), http.StatusBadRequest)
+	}
+}

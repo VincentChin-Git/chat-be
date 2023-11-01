@@ -8,11 +8,16 @@ import (
 
 func userRoutes() chi.Router {
 	r := chi.NewRouter()
-	r.Post("/signup", controllers.Signup)
-	r.Post("/login", controllers.Login)
+
+	// get
 	r.Get("/getUserInfoByToken", controllers.GetUserInfoByToken)
-	r.Post("/updateUserInfo", controllers.UpdateUserInfo)
+	r.Get("/searchUser", controllers.SearchUser)
+
+	// post
 	r.Post("/changePassword", controllers.ChangePassword)
+	r.Post("/login", controllers.Login)
+	r.Post("/signup", controllers.Signup)
+	r.Post("/updateUserInfo", controllers.UpdateUserInfo)
 
 	return r
 }

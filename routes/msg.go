@@ -11,10 +11,13 @@ import (
 func msgRoutes() chi.Router {
 	r := chi.NewRouter()
 
+	// get
 	r.Get("/getMsgs", controllers.GetMsgs)
-	r.Post("/updateMsgStatus", controllers.UpdateMsgStatus)
-	r.Post("/sendMsg", controllers.SendMsg)
 	r.Get("/getOverviewMsg", controllers.GetOverviewMsg)
+
+	// post
+	r.Post("/sendMsg", controllers.SendMsg)
+	r.Post("/updateMsgStatus", controllers.UpdateMsgStatus)
 
 	return r
 }

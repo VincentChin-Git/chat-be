@@ -3,6 +3,7 @@ package services
 import (
 	"chat-be/models"
 	"chat-be/storage"
+	"chat-be/utils"
 	"context"
 	"errors"
 	"fmt"
@@ -100,4 +101,40 @@ func GetContact(_id string, skip int, limit int) ([]ContactElemRes, error) {
 		contactList = append(contactList, res)
 	}
 	return contactList, nil
+}
+
+func AddContact(userId string, contactId string) (models.Contact, error) {
+	userDoc := storage.ClientDatabase.Collection("user")
+	contactDoc := storage.ClientDatabase.Collection("contact")
+
+	userList := []primitive.ObjectID{utils.ToObjectId(userId), utils.ToObjectId(contactId)}
+
+	count, err := userDoc.CountDocuments(context.Background(), bson.M{"_id": bson.M{"$in": userList}})
+
+	if err != nil {
+		fmt.Println(err, "errFindUser")
+		return models.Contact{}, errors.New("")
+	}
+
+	if count < 2 {
+		return models.Contact{}, errors.New("Invalid User")
+	}
+
+	newContact := models.Contact{
+		UserId:    utils.ToObjectId(userId),
+		ContactId: utils.ToObjectId(contactId),
+		Status:    "active",
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	result, err := contactDoc.InsertOne(context.Background(), newContact)
+	if err != nil {
+		fmt.Println(err, "errAddContact")
+		return models.Contact{}, errors.New("")
+	}
+
+	newContact.Id = utils.ToObjectId(result.InsertedID.(string))
+
+	return newContact, nil
 }

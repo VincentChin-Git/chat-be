@@ -31,6 +31,9 @@ func main() {
 	fmt.Println("Connecting To MongoDB...")
 	storage.ConnectDatabase()
 
+	fmt.Println("Setting AWS Bucket...")
+	storage.SetupAws()
+
 	fmt.Println("Server Started!") // todo: add this log after the server starts
 
 	err := http.ListenAndServe(":5051", r)

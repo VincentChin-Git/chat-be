@@ -8,10 +8,14 @@ import (
 )
 
 type Config struct {
-	DatabaseURL string
-	RedisAddr   string
-	RedisPass   string
-	TokenSecret string
+	DatabaseURL     string
+	RedisAddr       string
+	RedisPass       string
+	TokenSecret     string
+	AwsAccessKey    string
+	AwsSecretKey    string
+	AwsBucketName   string
+	AwsBucketFolder string
 }
 
 func GetConfig() Config {
@@ -25,8 +29,21 @@ func GetConfig() Config {
 	redisAddr := os.Getenv("RedisAddr")
 	redisPass := os.Getenv("RedisPass")
 	tokenSecret := os.Getenv("TokenSecret")
+	awsAccessKey := os.Getenv("AwsAccessKey")
+	awsSecretKey := os.Getenv("AwsSecretKey")
+	awsBucketName := os.Getenv("AwsBucketName")
+	awsBucketFolder := os.Getenv("AwsBucketFolder")
 
-	temp := Config{DatabaseURL: databaseURL, RedisAddr: redisAddr, RedisPass: redisPass, TokenSecret: tokenSecret}
+	temp := Config{
+		DatabaseURL:     databaseURL,
+		RedisAddr:       redisAddr,
+		RedisPass:       redisPass,
+		TokenSecret:     tokenSecret,
+		AwsAccessKey:    awsAccessKey,
+		AwsSecretKey:    awsSecretKey,
+		AwsBucketName:   awsBucketName,
+		AwsBucketFolder: awsBucketFolder,
+	}
 
 	return temp
 }

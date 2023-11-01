@@ -7,9 +7,10 @@ import (
 func MainRouter() chi.Router {
 	r := chi.NewRouter()
 
-	r.Mount("/user", userRoutes())
+	r.Mount("/aws", awsRoutes())
 	r.Mount("/contact", contactRoutes())
 	r.Mount("/msg", msgRoutes())
+	r.Mount("/user", userRoutes())
 
 	return r
 }

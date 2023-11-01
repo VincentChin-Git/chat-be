@@ -126,11 +126,9 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 }
 
 func SearchUser(w http.ResponseWriter, r *http.Request) {
-	var ctx struct {
-		Mobile string `json:"mobile,omitempty"`
-	}
+	mobile := r.URL.Query().Get("mobile")
 
-	user, err := services.SearchUser(ctx.Mobile)
+	user, err := services.SearchUser(mobile)
 	if err == nil {
 		utils.JsonResponse(w, user, http.StatusOK)
 	} else {

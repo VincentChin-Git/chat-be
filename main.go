@@ -31,7 +31,7 @@ func main() {
 	fmt.Println("Connecting To MongoDB...")
 	storage.ConnectDatabase()
 
-	fmt.Println("Setting AWS Bucket...")
+	fmt.Println("Setting Up AWS Bucket...")
 	storage.SetupAws()
 
 	fmt.Println("Server Started!") // todo: add this log after the server starts

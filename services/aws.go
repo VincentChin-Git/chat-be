@@ -19,7 +19,7 @@ func uploadSignature(filename string, validExts []string, errMsg string) (string
 	}
 
 	// validate filetype
-	extension := filepath.Ext(filename)
+	extension := filepath.Ext(filename)[1:]
 
 	if extension == "" {
 		return "", errors.New("Filename Error")

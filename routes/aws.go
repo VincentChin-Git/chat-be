@@ -12,8 +12,8 @@ func awsRoutes() chi.Router {
 	// get
 
 	// post
-	r.Post("/UploadImgSignature", controllers.UploadImgSignature)
-	r.Post("/UploadVideoSignature", controllers.UploadVideoSignature)
+	r.Post("/uploadImgSignature", controllers.UploadImgSignature)
+	r.Post("/uploadImgSignature", controllers.UploadVideoSignature)
 
 	return r
 }

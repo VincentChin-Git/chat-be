@@ -337,29 +337,35 @@ func AddForgetPassword(userId string, code string) error {
 	}
 }
 
-func GetForgetPassCode(userId string) error {
-	if userId == "" {
-		return errors.New("Invalid Info")
+func GetForgetPassCode(mobile string) (string, error) {
+	if mobile == "" {
+		return "", errors.New("Invalid Info")
 	}
 
 	userDoc := storage.ClientDatabase.Collection("users")
-	cur := userDoc.FindOne(context.Background(), bson.M{"_id": utils.ToObjectId(userId)})
+	cur := userDoc.FindOne(context.Background(), bson.M{"mobile": mobile})
 	if cur.Err() != nil {
 		fmt.Println(cur.Err().Error())
-		return errors.New("No User Found")
+		return "", errors.New("No User Found")
+	}
+	var userInfo models.User
+	err := cur.Decode(&userInfo)
+	if err != nil {
+		fmt.Println(err.Error())
+		return "", errors.New("")
 	}
 
 	generatedCode, err := utils.GenerateRandomNumber(6)
 	if err != nil {
 		fmt.Println(err.Error())
-		return errors.New("")
+		return "", errors.New("")
 	}
 
-	isErr := storage.WriteRedis(userId+"_forgetPassword", generatedCode, time.Minute)
+	isErr := storage.WriteRedis(userInfo.Id.Hex()+"_forgetPassword", generatedCode, time.Minute)
 
 	if isErr {
-		return errors.New("")
+		return "", errors.New("")
 	}
 
-	return nil
+	return userInfo.Id.Hex(), nil
 }

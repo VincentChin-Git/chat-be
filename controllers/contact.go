@@ -83,7 +83,7 @@ func RemoveContact(w http.ResponseWriter, r *http.Request) {
 	err = services.RemoveContact(userId, ctx.ContactId)
 
 	if err == nil {
-		utils.JsonResponse(w, "", http.StatusOK)
+		utils.JsonResponse(w, true, http.StatusOK)
 	} else {
 		utils.JsonResponseError(w, "999999", err.Error(), http.StatusBadRequest)
 	}

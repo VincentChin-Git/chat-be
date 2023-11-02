@@ -61,7 +61,7 @@ func UpdateMsgStatus(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		utils.JsonResponseError(w, "999999", err.Error(), http.StatusBadRequest)
 	} else {
-		utils.JsonResponse(w, "", http.StatusOK)
+		utils.JsonResponse(w, true, http.StatusOK)
 	}
 
 }

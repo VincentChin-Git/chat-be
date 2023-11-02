@@ -88,7 +88,7 @@ func UpdateUserInfo(w http.ResponseWriter, r *http.Request) {
 	err = services.UpdateUserInfo(_id, userInfo)
 
 	if err == nil {
-		utils.JsonResponse(w, "", http.StatusOK)
+		utils.JsonResponse(w, true, http.StatusOK)
 	} else {
 		utils.JsonResponseError(w, "999999", err.Error(), http.StatusBadRequest)
 	}
@@ -118,7 +118,7 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 	err = services.ChangePassword(_id, ctx.OldPass, ctx.NewPass)
 
 	if err == nil {
-		utils.JsonResponse(w, "", http.StatusOK)
+		utils.JsonResponse(w, true, http.StatusOK)
 	} else {
 		utils.JsonResponseError(w, "999999", err.Error(), http.StatusBadRequest)
 	}
@@ -153,7 +153,7 @@ func ForgetPassword(w http.ResponseWriter, r *http.Request) {
 
 	err = services.ForgetPassword(ctx.Id, ctx.Code, ctx.Password)
 	if err == nil {
-		utils.JsonResponse(w, "", http.StatusOK)
+		utils.JsonResponse(w, true, http.StatusOK)
 	} else {
 		utils.JsonResponseError(w, "999999", err.Error(), http.StatusBadRequest)
 	}
@@ -180,24 +180,19 @@ func AddForgetPassword(w http.ResponseWriter, r *http.Request) {
 	err = services.AddForgetPassword(_id, ctx.Code)
 
 	if err == nil {
-		utils.JsonResponse(w, "", http.StatusOK)
+		utils.JsonResponse(w, true, http.StatusOK)
 	} else {
 		utils.JsonResponseError(w, "999999", err.Error(), http.StatusBadRequest)
 	}
 
 }
 func GetForgetPassCode(w http.ResponseWriter, r *http.Request) {
-	_id, ok := r.Context().Value(middleware.ContextKey("parsedId")).(string)
+	mobile := r.URL.Query().Get("mobile")
 
-	if !ok {
-		utils.JsonResponseError(w, "999999", "", http.StatusBadRequest)
-		return
-	}
-
-	err := services.GetForgetPassCode(_id)
+	userId, err := services.GetForgetPassCode(mobile)
 
 	if err == nil {
-		utils.JsonResponse(w, "", http.StatusOK)
+		utils.JsonResponse(w, userId, http.StatusOK)
 	} else {
 		utils.JsonResponseError(w, "999999", err.Error(), http.StatusBadRequest)
 	}

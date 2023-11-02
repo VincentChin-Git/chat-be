@@ -15,7 +15,6 @@ type SignUpType struct {
 	Mobile   string `json:"mobile"`
 	Username string `json:"username"`
 	Password string `json:"password"`
-	Nickname string `json:"nickname"`
 }
 
 func Signup(w http.ResponseWriter, r *http.Request) {
@@ -27,7 +26,7 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := services.Signup(ctx.Mobile, ctx.Username, ctx.Password, ctx.Nickname)
+	result, err := services.Signup(ctx.Mobile, ctx.Username, ctx.Password)
 
 	if err == nil {
 		utils.JsonResponse(w, result, http.StatusOK)

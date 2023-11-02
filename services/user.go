@@ -14,8 +14,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func Signup(mobile string, username string, password string, nickname string) (string, error) {
-	if mobile == "" || username == "" || password == "" || nickname == "" || !utils.IsAllNumber(mobile) || len(mobile) != 8 {
+func Signup(mobile string, username string, password string) (string, error) {
+	if mobile == "" || username == "" || password == "" || !utils.IsAllNumber(mobile) || len(mobile) != 8 {
 		return "", errors.New("Invalid info")
 	}
 
@@ -45,6 +45,12 @@ func Signup(mobile string, username string, password string, nickname string) (s
 	if err != nil {
 		return "", errors.New("")
 	}
+
+	nickname, err := utils.GenerateRandomNumber(5)
+	if err != nil {
+		return "", errors.New("")
+	}
+	nickname = "user-" + nickname
 
 	userTemplate := models.User{
 		Username:   username,

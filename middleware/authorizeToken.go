@@ -17,7 +17,14 @@ func authorizeToken(next http.Handler) http.Handler {
 		reqPath := r.URL.Path
 
 		// Do stuff
-		var skippedPath = []string{"/api/user/signup", "/api/user/login"}
+		var skippedPath = []string{
+			"/api/user/signup",
+			"/api/user/login",
+			"/api/user/getForgetPassCode",
+			"/api/user/addForgetPassword",
+			"/api/user/forgetPassword",
+		}
+
 		for _, path := range skippedPath {
 			if path == reqPath {
 				next.ServeHTTP(w, r)

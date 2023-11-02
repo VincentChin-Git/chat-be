@@ -138,3 +138,23 @@ func AddContact(userId string, contactId string) (models.Contact, error) {
 
 	return newContact, nil
 }
+
+func RemoveContact(userId string, contactId string) error {
+
+	contactDoc := storage.ClientDatabase.Collection("contacts")
+
+	_, err := contactDoc.UpdateOne(context.Background(), bson.M{
+		"userId":    utils.ToObjectId(userId),
+		"contactId": utils.ToObjectId(contactId),
+	}, bson.M{
+		"status":    "inactive",
+		"updatedAt": time.Now(),
+	})
+
+	if err != nil {
+		fmt.Println(err, "errRemoveContact")
+		return errors.New("")
+	}
+
+	return nil
+}

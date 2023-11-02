@@ -63,3 +63,28 @@ func AddContact(w http.ResponseWriter, r *http.Request) {
 	}
 
 }
+
+func RemoveContact(w http.ResponseWriter, r *http.Request) {
+	userId, ok := r.Context().Value(middleware.ContextKey("parsedId")).(string)
+	if !ok {
+		utils.JsonResponseError(w, "999999", "", http.StatusBadRequest)
+		return
+	}
+
+	var ctx struct {
+		ContactId string `json:"contactId"`
+	}
+	err := json.NewDecoder(r.Body).Decode(&ctx)
+	if err != nil {
+		utils.JsonResponseError(w, "999999", "", http.StatusBadRequest)
+		return
+	}
+
+	err = services.RemoveContact(userId, ctx.ContactId)
+
+	if err == nil {
+		utils.JsonResponse(w, "", http.StatusOK)
+	} else {
+		utils.JsonResponseError(w, "999999", err.Error(), http.StatusBadRequest)
+	}
+}

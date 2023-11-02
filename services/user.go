@@ -207,7 +207,10 @@ func ChangePassword(_id string, oldPass string, newPass string) error {
 		return errors.New("")
 	}
 
-	_, err = userDoc.UpdateByID(context.Background(), utils.ToObjectId(_id), bson.M{"password": passwordEncoded})
+	_, err = userDoc.UpdateByID(context.Background(), utils.ToObjectId(_id), bson.M{
+		"password":  passwordEncoded,
+		"updatedAt": time.Now(),
+	})
 	if err != nil {
 		return errors.New("")
 	}
@@ -239,4 +242,118 @@ func SearchUser(mobile string) (models.User, error) {
 	userRes.Mobile = userTemp.Mobile
 
 	return userRes, nil
+}
+
+func ForgetPassword(_id string, code string, password string) error {
+	if _id == "" || code == "" || password == "" {
+		return errors.New("Invalid Info")
+	}
+
+	// search for matched code
+	resetPassDoc := storage.ClientDatabase.Collection("resetPass")
+	result := resetPassDoc.FindOne(context.Background(), bson.M{
+		"_id":    utils.ToObjectId(_id),
+		"code":   code,
+		"status": "pending",
+	})
+
+	if result.Err() != nil {
+		fmt.Println(result.Err().Error())
+		return errors.New("")
+	}
+
+	// generate password
+	newPassByte := []byte(password)
+	passwordEncoded, err := bcrypt.GenerateFromPassword(newPassByte, bcrypt.DefaultCost)
+	if err != nil {
+		fmt.Println(err)
+		return errors.New("")
+	}
+
+	var resetInfo models.ResetPass
+	err = result.Decode(&resetInfo)
+	if err != nil {
+		fmt.Println(err)
+		return errors.New("")
+	}
+
+	// get userid and update user password
+	userId := resetInfo.UserId
+
+	userDoc := storage.ClientDatabase.Collection("users")
+	_, err = userDoc.UpdateByID(context.Background(), utils.ToObjectId(userId.Hex()), bson.M{
+		"password":  passwordEncoded,
+		"updatedAt": time.Now(),
+	})
+
+	if err != nil {
+		fmt.Println(err)
+		return errors.New("")
+	}
+
+	// update reset password to completed
+	_, err = resetPassDoc.UpdateByID(context.Background(), utils.ToObjectId(_id), bson.M{
+		"status":    "completed",
+		"updatedAt": time.Now(),
+	})
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	return nil
+}
+
+func AddForgetPassword(userId string, code string) error {
+	if userId == "" || code == "" {
+		return errors.New("Invalid Info")
+	}
+
+	resetPassDoc := storage.ClientDatabase.Collection("resetPass")
+
+	getCode := storage.ReadRedis(userId + "_forgetPassword")
+	if getCode == code {
+		resetPassInfo := models.ResetPass{
+			UserId:     utils.ToObjectId(userId),
+			VerifyCode: code,
+			Status:     "pending",
+			CreatedAt:  time.Now(),
+			UpdatedAt:  time.Now(),
+		}
+		_, err := resetPassDoc.InsertOne(context.Background(), resetPassInfo)
+		if err != nil {
+			return errors.New("")
+		}
+
+		return nil
+	} else {
+		return errors.New("Invalid Verification Code")
+	}
+}
+
+func GetForgetPassCode(userId string) error {
+	if userId == "" {
+		return errors.New("Invalid Info")
+	}
+
+	userDoc := storage.ClientDatabase.Collection("users")
+	cur := userDoc.FindOne(context.Background(), bson.M{"_id": utils.ToObjectId(userId)})
+	if cur.Err() != nil {
+		fmt.Println(cur.Err().Error())
+		return errors.New("No User Found")
+	}
+
+	generatedCode, err := utils.GenerateRandomNumber(6)
+	if err != nil {
+		fmt.Println(err.Error())
+		return errors.New("")
+	}
+
+	isErr := storage.WriteRedis(userId+"_forgetPassword", generatedCode, time.Minute)
+
+	if isErr {
+		return errors.New("")
+	}
+
+	return nil
 }

@@ -14,6 +14,7 @@ func contactRoutes() chi.Router {
 
 	// post
 	r.Post("/addContact", controllers.AddContact)
+	r.Post("/removeContact", controllers.RemoveContact)
 
 	return r
 }

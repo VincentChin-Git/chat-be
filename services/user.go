@@ -224,9 +224,9 @@ func ChangePassword(_id string, oldPass string, newPass string) error {
 	return nil
 }
 
-func SearchUser(mobile string) (models.User, error) {
+func SearchUser(key string, value string) (models.User, error) {
 	userDoc := storage.ClientDatabase.Collection("user")
-	cur := userDoc.FindOne(context.Background(), bson.M{"mobile": mobile, "status": "active"})
+	cur := userDoc.FindOne(context.Background(), bson.M{key: value, "status": "active"})
 	if cur.Err() != nil {
 		fmt.Println(cur.Err())
 		return models.User{}, nil

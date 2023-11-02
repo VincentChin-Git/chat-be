@@ -19,11 +19,15 @@ func GetContact(w http.ResponseWriter, r *http.Request) {
 	page, errPage := strconv.Atoi(r.URL.Query().Get("page"))
 	pageSize, errPageSize := strconv.Atoi(r.URL.Query().Get("pageSize"))
 
-	skip := utils.ToSkipRow(page, pageSize)
-
-	if errPage != nil || errPageSize != nil {
-		utils.JsonResponseError(w, "999999", "Invalid Info", http.StatusBadRequest)
+	if errPage != nil {
+		page = 1
 	}
+
+	if errPageSize != nil {
+		pageSize = 10
+	}
+
+	skip := utils.ToSkipRow(page, pageSize)
 
 	result, err := services.GetContact(_id, skip, pageSize)
 

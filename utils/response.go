@@ -2,6 +2,7 @@ package utils
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
@@ -21,6 +22,7 @@ func JsonResponse(w http.ResponseWriter, data interface{}, status int) {
 	isSuccess := status == http.StatusOK
 	response := Response{Data: data, Code: status, Success: isSuccess}
 	responseJSON, errJSON := json.Marshal(response)
+	fmt.Println(string(responseJSON), "returned Data")
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
@@ -43,6 +45,7 @@ func JsonResponseError(w http.ResponseWriter, errCode string, errMessage string,
 	}
 	response := ResponseError{ErrCode: errCode, ErrMessage: realErr}
 	responseJSON, errJSON := json.Marshal(response)
+	fmt.Println(string(responseJSON), "returned Error")
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)

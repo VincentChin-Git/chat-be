@@ -105,11 +105,14 @@ func SendMsg(senderId string, receiveId string, data models.Msg) (string, error)
 		return "", errors.New("Invalid User")
 	}
 
-	data.SenderId = utils.ToObjectId(senderId)
-	data.ReceiveId = utils.ToObjectId(receiveId)
+	senderOId := utils.ToObjectId(senderId)
+	receiveOId := utils.ToObjectId(receiveId)
+	timeNow := time.Now()
+	data.SenderId = &senderOId
+	data.ReceiveId = &receiveOId
 	data.Status = "sending"
-	data.CreatedAt = time.Now()
-	data.UpdatedAt = time.Now()
+	data.CreatedAt = &timeNow
+	data.UpdatedAt = &timeNow
 
 	msgDoc := storage.ClientDatabase.Collection("msgs")
 	result, err := msgDoc.InsertOne(context.Background(), data)

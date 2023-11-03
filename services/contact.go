@@ -89,13 +89,14 @@ func GetContact(_id string, skip int, limit int) ([]ContactElemRes, error) {
 			continue
 		}
 
+		lastActive := item.ContactInfo.LastActive
 		res := ContactElemRes{
 			ContactId:  item.ContactId,
 			Mobile:     item.ContactInfo.Mobile,
 			Avatar:     item.ContactInfo.Avatar,
 			Nickname:   item.ContactInfo.Nickname,
 			Describe:   item.ContactInfo.Describe,
-			LastActive: item.ContactInfo.LastActive,
+			LastActive: *lastActive,
 		}
 
 		contactList = append(contactList, res)
@@ -120,12 +121,15 @@ func AddContact(userId string, contactId string) (models.Contact, error) {
 		return models.Contact{}, errors.New("Invalid User")
 	}
 
+	userOId := utils.ToObjectId(userId)
+	contactOId := utils.ToObjectId(contactId)
+	timeNow := time.Now()
 	newContact := models.Contact{
-		UserId:    utils.ToObjectId(userId),
-		ContactId: utils.ToObjectId(contactId),
+		UserId:    &userOId,
+		ContactId: &contactOId,
 		Status:    "active",
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		CreatedAt: &timeNow,
+		UpdatedAt: &timeNow,
 	}
 
 	result, err := contactDoc.InsertOne(context.Background(), newContact)
@@ -134,7 +138,8 @@ func AddContact(userId string, contactId string) (models.Contact, error) {
 		return models.Contact{}, errors.New("")
 	}
 
-	newContact.Id = utils.ToObjectId(result.InsertedID.(string))
+	insertedId := utils.ToObjectId(result.InsertedID.(string))
+	newContact.Id = &insertedId
 
 	return newContact, nil
 }

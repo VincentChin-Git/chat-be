@@ -52,15 +52,16 @@ func Signup(mobile string, username string, password string) (string, error) {
 	}
 	nickname = "user-" + nickname
 
+	timeNow := time.Now()
 	userTemplate := models.User{
 		Username:   username,
 		Mobile:     mobile,
 		Password:   passwordEncoded,
 		Nickname:   nickname,
 		Status:     "active",
-		LastActive: time.Now(),
-		CreatedAt:  time.Now(),
-		UpdatedAt:  time.Now(),
+		LastActive: &timeNow,
+		CreatedAt:  &timeNow,
+		UpdatedAt:  &timeNow,
 	}
 
 	// add user
@@ -163,19 +164,20 @@ func UpdateUserInfo(_id string, userinfo models.User) error {
 	userDoc := storage.ClientDatabase.Collection("users")
 
 	updatedField := models.User{}
+	timeNow := time.Now()
 	if userinfo.Nickname != "" {
 		updatedField.Nickname = userinfo.Nickname
-		updatedField.UpdatedAt = time.Now()
+		updatedField.UpdatedAt = &timeNow
 	}
 	if userinfo.Avatar != "" {
 		updatedField.Avatar = userinfo.Avatar
-		updatedField.UpdatedAt = time.Now()
+		updatedField.UpdatedAt = &timeNow
 	}
 	if userinfo.Describe != "" {
 		updatedField.Describe = userinfo.Describe
-		updatedField.UpdatedAt = time.Now()
+		updatedField.UpdatedAt = &timeNow
 	}
-	updatedField.LastActive = time.Now()
+	updatedField.LastActive = &timeNow
 
 	result, err := userDoc.UpdateByID(context.Background(), userId, updatedField)
 	if err != nil {
@@ -318,13 +320,15 @@ func AddForgetPassword(userId string, code string) error {
 	resetPassDoc := storage.ClientDatabase.Collection("resetPass")
 
 	getCode := storage.ReadRedis(userId + "_forgetPassword")
+	timeNow := time.Now()
+	userIdObject := utils.ToObjectId(userId)
 	if getCode == code {
 		resetPassInfo := models.ResetPass{
-			UserId:     utils.ToObjectId(userId),
+			UserId:     &userIdObject,
 			VerifyCode: code,
 			Status:     "pending",
-			CreatedAt:  time.Now(),
-			UpdatedAt:  time.Now(),
+			CreatedAt:  &timeNow,
+			UpdatedAt:  &timeNow,
 		}
 		_, err := resetPassDoc.InsertOne(context.Background(), resetPassInfo)
 		if err != nil {

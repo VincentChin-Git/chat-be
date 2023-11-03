@@ -23,6 +23,7 @@ func authorizeToken(next http.Handler) http.Handler {
 			"/api/user/getForgetPassCode",
 			"/api/user/addForgetPassword",
 			"/api/user/forgetPassword",
+			"/api/user/searchUser",
 		}
 
 		for _, path := range skippedPath {

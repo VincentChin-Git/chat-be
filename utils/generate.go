@@ -44,11 +44,9 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-func GenerateToken(rawString string) (string, error) {
+func GenerateToken(rawString string, expirationTime time.Time) (string, error) {
 	configGet := config.GetConfig()
 	jwtKey := []byte(configGet.TokenSecret)
-
-	expirationTime := time.Now().Add(30 * 24 * time.Hour)
 
 	claims := &Claims{
 		Key: rawString,

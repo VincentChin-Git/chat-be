@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 )
 
 type SignUpType struct {
@@ -60,9 +59,8 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 func GetUserInfoByToken(w http.ResponseWriter, r *http.Request) {
 	reqToken := r.Header.Get("Authorization")
-	token := strings.Split(reqToken, "Bearer ")[1]
 
-	result, err := services.GetUserInfoByToken(token)
+	result, err := services.GetUserInfoByToken(reqToken)
 
 	if err == nil {
 		utils.JsonResponse(w, result, http.StatusOK)

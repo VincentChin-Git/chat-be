@@ -73,7 +73,7 @@ func Signup(mobile string, username string, password string) (string, error) {
 	if result.InsertedID != nil {
 
 		// generate token
-		userToken, err := utils.GenerateToken(result.InsertedID.(primitive.ObjectID).Hex())
+		userToken, err := utils.GenerateToken(result.InsertedID.(primitive.ObjectID).Hex(), time.Now().Add(30*24*time.Hour))
 		if err != nil {
 			return "", errors.New("")
 		}
@@ -108,7 +108,7 @@ func Login(param string, password string) (string, error) {
 		return "", errors.New("Invalid Login Info")
 	}
 
-	token, err := utils.GenerateToken(userInfo.Id.Hex())
+	token, err := utils.GenerateToken(userInfo.Id.Hex(), time.Now().Add(30*24*time.Hour))
 	if err != nil {
 		return "", errors.New("")
 	}
@@ -142,7 +142,7 @@ func GetUserInfoByToken(token string) (getUserInfoRes, error) {
 	}
 
 	// refresh token
-	newToken, err := utils.GenerateToken(userData.Id.Hex())
+	newToken, err := utils.GenerateToken(userData.Id.Hex(), time.Now().Add(30*24*time.Hour))
 	if err != nil {
 		return blankData, errors.New("")
 	}

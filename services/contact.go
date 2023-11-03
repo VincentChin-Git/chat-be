@@ -105,8 +105,8 @@ func GetContact(_id string, skip int, limit int) ([]ContactElemRes, error) {
 }
 
 func AddContact(userId string, contactId string) (models.Contact, error) {
-	userDoc := storage.ClientDatabase.Collection("user")
-	contactDoc := storage.ClientDatabase.Collection("contact")
+	userDoc := storage.ClientDatabase.Collection("users")
+	contactDoc := storage.ClientDatabase.Collection("contacts")
 
 	userList := []primitive.ObjectID{utils.ToObjectId(userId), utils.ToObjectId(contactId)}
 

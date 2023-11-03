@@ -227,7 +227,7 @@ func ChangePassword(_id string, oldPass string, newPass string) error {
 }
 
 func SearchUser(key string, value string) (models.User, error) {
-	userDoc := storage.ClientDatabase.Collection("user")
+	userDoc := storage.ClientDatabase.Collection("users")
 	cur := userDoc.FindOne(context.Background(), bson.M{key: value, "status": "active"})
 	if cur.Err() != nil {
 		fmt.Println(cur.Err())

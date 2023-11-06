@@ -95,7 +95,7 @@ func Login(param string, password string) (string, error) {
 		{"mobile": param},
 		{"username": param},
 	}})
-	if cur.Err() == nil {
+	if cur.Err() != nil {
 		return "", errors.New("Invalid Login Info")
 	}
 	err := cur.Decode(&userInfo)
@@ -121,22 +121,20 @@ type getUserInfoRes struct {
 	Token    string      `json:"token"`
 }
 
-func GetUserInfoByToken(token string) (getUserInfoRes, error) {
+func GetUserInfoByToken(userId string) (getUserInfoRes, error) {
 	blankData := getUserInfoRes{
 		UserData: models.User{},
 		Token:    "",
 	}
-	userId, err := utils.DecodeToken(token)
-	if err != nil {
-		return blankData, errors.New("")
-	}
 
-	userDataCur := storage.ClientDatabase.Collection("users").FindOne(context.Background(), []bson.M{{"_id": utils.ToObjectId(userId)}})
+	fmt.Println(userId, "userId")
+
+	userDataCur := storage.ClientDatabase.Collection("users").FindOne(context.Background(), bson.M{"_id": utils.ToObjectId(userId)})
 	if userDataCur.Err() != nil {
 		return blankData, errors.New("")
 	}
 	var userData models.User
-	err = userDataCur.Decode(&userData)
+	err := userDataCur.Decode(&userData)
 	if err != nil {
 		return blankData, errors.New("")
 	}
@@ -147,7 +145,7 @@ func GetUserInfoByToken(token string) (getUserInfoRes, error) {
 		return blankData, errors.New("")
 	}
 
-	err = UpdateUserInfo(userData.Id.String(), models.User{})
+	err = UpdateUserInfo(userData.Id.Hex(), models.User{})
 	if err != nil {
 		return blankData, errors.New("")
 	}
@@ -179,8 +177,9 @@ func UpdateUserInfo(_id string, userinfo models.User) error {
 	}
 	updatedField.LastActive = &timeNow
 
-	result, err := userDoc.UpdateByID(context.Background(), userId, updatedField)
+	result, err := userDoc.UpdateByID(context.Background(), userId, bson.M{"$set": updatedField})
 	if err != nil {
+		fmt.Println(err.Error())
 		return errors.New("")
 	}
 	fmt.Println("Updated: ", result.ModifiedCount, updatedField)
@@ -216,8 +215,10 @@ func ChangePassword(_id string, oldPass string, newPass string) error {
 	}
 
 	_, err = userDoc.UpdateByID(context.Background(), utils.ToObjectId(_id), bson.M{
-		"password":  passwordEncoded,
-		"updatedAt": time.Now(),
+		"$set": bson.M{
+			"password":  passwordEncoded,
+			"updatedAt": time.Now(),
+		},
 	})
 	if err != nil {
 		return errors.New("")
@@ -252,17 +253,19 @@ func SearchUser(key string, value string) (models.User, error) {
 	return userRes, nil
 }
 
-func ForgetPassword(_id string, code string, password string) error {
-	if _id == "" || code == "" || password == "" {
+func ForgetPassword(userId string, code string, password string) error {
+	if userId == "" || code == "" || password == "" {
 		return errors.New("Invalid Info")
 	}
+
+	fmt.Println(userId, code, password)
 
 	// search for matched code
 	resetPassDoc := storage.ClientDatabase.Collection("resetPass")
 	result := resetPassDoc.FindOne(context.Background(), bson.M{
-		"_id":    utils.ToObjectId(_id),
-		"code":   code,
-		"status": "pending",
+		"userId":     utils.ToObjectId(userId),
+		"verifyCode": code,
+		"status":     "pending",
 	})
 
 	if result.Err() != nil {
@@ -285,13 +288,12 @@ func ForgetPassword(_id string, code string, password string) error {
 		return errors.New("")
 	}
 
-	// get userid and update user password
-	userId := resetInfo.UserId
-
 	userDoc := storage.ClientDatabase.Collection("users")
-	_, err = userDoc.UpdateByID(context.Background(), utils.ToObjectId(userId.Hex()), bson.M{
-		"password":  passwordEncoded,
-		"updatedAt": time.Now(),
+	_, err = userDoc.UpdateByID(context.Background(), utils.ToObjectId(userId), bson.M{
+		"$set": bson.M{
+			"password":  passwordEncoded,
+			"updatedAt": time.Now(),
+		},
 	})
 
 	if err != nil {
@@ -300,13 +302,16 @@ func ForgetPassword(_id string, code string, password string) error {
 	}
 
 	// update reset password to completed
-	_, err = resetPassDoc.UpdateByID(context.Background(), utils.ToObjectId(_id), bson.M{
-		"status":    "completed",
-		"updatedAt": time.Now(),
+	_, err = resetPassDoc.UpdateByID(context.Background(), utils.ToObjectId(resetInfo.Id.Hex()), bson.M{
+		"$set": bson.M{
+			"status":    "completed",
+			"updatedAt": time.Now(),
+		},
 	})
 
 	if err != nil {
 		fmt.Println(err)
+		return errors.New("")
 	}
 
 	return nil

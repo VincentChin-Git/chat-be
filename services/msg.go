@@ -81,7 +81,11 @@ func UpdateMsgStatus(_id string, status string) error {
 	}
 
 	msgDoc := storage.ClientDatabase.Collection("msgs")
-	_, err := msgDoc.UpdateByID(context.Background(), utils.ToObjectId(_id), bson.M{"status": status})
+	_, err := msgDoc.UpdateByID(context.Background(), utils.ToObjectId(_id), bson.M{
+		"$set": bson.M{
+			"status": status,
+		},
+	})
 
 	if err != nil {
 		return errors.New("")

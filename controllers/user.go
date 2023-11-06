@@ -58,9 +58,15 @@ func Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetUserInfoByToken(w http.ResponseWriter, r *http.Request) {
-	reqToken := r.Header.Get("Authorization")
 
-	result, err := services.GetUserInfoByToken(reqToken)
+	_id, ok := r.Context().Value(middleware.ContextKey("parsedId")).(string)
+
+	if !ok {
+		utils.JsonResponseError(w, "999999", "", http.StatusBadRequest)
+		return
+	}
+
+	result, err := services.GetUserInfoByToken(_id)
 
 	if err == nil {
 		utils.JsonResponse(w, result, http.StatusOK)
@@ -159,7 +165,8 @@ func ForgetPassword(w http.ResponseWriter, r *http.Request) {
 
 func AddForgetPassword(w http.ResponseWriter, r *http.Request) {
 	var ctx struct {
-		Code string `json:"code,omitempty"`
+		UserId string `json:"userId,omitempty"`
+		Code   string `json:"code,omitempty"`
 	}
 	err := json.NewDecoder(r.Body).Decode(&ctx)
 	if err != nil {
@@ -168,14 +175,7 @@ func AddForgetPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_id, ok := r.Context().Value(middleware.ContextKey("parsedId")).(string)
-
-	if !ok {
-		utils.JsonResponseError(w, "999999", "", http.StatusBadRequest)
-		return
-	}
-
-	err = services.AddForgetPassword(_id, ctx.Code)
+	err = services.AddForgetPassword(ctx.UserId, ctx.Code)
 
 	if err == nil {
 		utils.JsonResponse(w, true, http.StatusOK)

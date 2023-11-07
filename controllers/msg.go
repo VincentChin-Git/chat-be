@@ -45,7 +45,7 @@ func GetMsgs(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateMsgStatus(w http.ResponseWriter, r *http.Request) {
-	var ctx struct {
+	var ctx []struct {
 		Id     string `json:"_id,omitempty"`
 		Status string `json:"status,omitempty"`
 	}
@@ -62,12 +62,15 @@ func UpdateMsgStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = services.UpdateMsgStatus(ctx.Id, ctx.Status, _id)
-	if err != nil {
-		utils.JsonResponseError(w, "999999", err.Error(), http.StatusBadRequest)
-	} else {
-		utils.JsonResponse(w, true, http.StatusOK)
+	for _, item := range ctx {
+		err = services.UpdateMsgStatus(item.Id, item.Status, _id)
+		if err != nil {
+			utils.JsonResponseError(w, "999999", err.Error(), http.StatusBadRequest)
+			return
+		}
 	}
+
+	utils.JsonResponse(w, true, http.StatusOK)
 
 }
 

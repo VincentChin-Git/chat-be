@@ -27,8 +27,16 @@ func GetMsgs(userId string, contactId string, skip int, limit int) ([]models.Msg
 		primitive.E{
 			Key: "$match", Value: bson.M{
 				"$or": []bson.M{
-					{"senderId": uOId, "receiveId": cOId},
-					{"receiveId": uOId, "senderId": cOId},
+					{"senderId": uOId, "receiveId": cOId, "status": bson.M{
+						"$not": bson.M{
+							"$in": []string{"recalled", "deletedS", "deletedAll"},
+						},
+					}},
+					{"receiveId": uOId, "senderId": cOId, "status": bson.M{
+						"$not": bson.M{
+							"$in": []string{"recalled", "deletedR", "deletedAll"},
+						},
+					}},
 				},
 			},
 		},
@@ -339,7 +347,9 @@ func GetUnreadMsg(userId string) ([]GetUnreadMsgType, error) {
 		primitive.E{
 			Key: "$match", Value: bson.M{
 				"receiveId": utils.ToObjectId(userId),
-				"status":    "sent",
+				"status": bson.M{
+					"$in": []string{"sent", "received"},
+				},
 			},
 		},
 	}

@@ -34,9 +34,9 @@ func GetContact(_id string, skip int, limit int) ([]ContactElemRes, error) {
 	// get contact list and populate each row with corresponding user info
 	matchStage := bson.D{
 		primitive.E{
-			Key: "$match", Value: []bson.M{
-				{"userId": _id},
-				{"status": "active"},
+			Key: "$match", Value: bson.M{
+				"userId": utils.ToObjectId(_id),
+				"status": "active",
 			},
 		},
 	}
@@ -108,8 +108,8 @@ func AddContact(userId string, contactId string) (models.Contact, error) {
 	userDoc := storage.ClientDatabase.Collection("users")
 	contactDoc := storage.ClientDatabase.Collection("contacts")
 
+	// check user exist
 	userList := []primitive.ObjectID{utils.ToObjectId(userId), utils.ToObjectId(contactId)}
-
 	count, err := userDoc.CountDocuments(context.Background(), bson.M{"_id": bson.M{"$in": userList}})
 
 	if err != nil {
@@ -121,24 +121,41 @@ func AddContact(userId string, contactId string) (models.Contact, error) {
 		return models.Contact{}, errors.New("Invalid User")
 	}
 
+	// check contact exist
+	count, err = contactDoc.CountDocuments(context.Background(), bson.M{
+		"userId":    utils.ToObjectId(userId),
+		"contactId": utils.ToObjectId(contactId),
+		"status":    "active",
+	})
+
+	if err != nil {
+		fmt.Println(err, "existContact")
+		return models.Contact{}, errors.New("")
+	}
+
+	if count != 0 {
+		return models.Contact{}, errors.New("Contact Already Added")
+	}
+
 	userOId := utils.ToObjectId(userId)
 	contactOId := utils.ToObjectId(contactId)
 	timeNow := time.Now()
 	newContact := models.Contact{
-		UserId:    &userOId,
-		ContactId: &contactOId,
-		Status:    "active",
-		CreatedAt: &timeNow,
-		UpdatedAt: &timeNow,
+		UserId:        &userOId,
+		ContactId:     &contactOId,
+		RelativePoint: 1,
+		Status:        "active",
+		CreatedAt:     &timeNow,
+		UpdatedAt:     &timeNow,
 	}
 
 	result, err := contactDoc.InsertOne(context.Background(), newContact)
 	if err != nil {
-		fmt.Println(err, "errAddContact")
+		fmt.Println(err, "errAddContact", result.InsertedID)
 		return models.Contact{}, errors.New("")
 	}
 
-	insertedId := utils.ToObjectId(result.InsertedID.(string))
+	insertedId := result.InsertedID.(primitive.ObjectID)
 	newContact.Id = &insertedId
 
 	return newContact, nil
@@ -152,13 +169,81 @@ func RemoveContact(userId string, contactId string) error {
 		"userId":    utils.ToObjectId(userId),
 		"contactId": utils.ToObjectId(contactId),
 	}, bson.M{
-		"status":    "inactive",
-		"updatedAt": time.Now(),
+		"$set": bson.M{
+			"status":    "inactive",
+			"updatedAt": time.Now(),
+		},
 	})
 
 	if err != nil {
 		fmt.Println(err, "errRemoveContact")
 		return errors.New("")
+	}
+
+	return nil
+}
+
+func UpdatePoint(userId string, contactId string, isAdd bool) error {
+
+	contactDoc := storage.ClientDatabase.Collection("contacts")
+
+	cur1 := contactDoc.FindOne(context.Background(), bson.M{
+		"userId":    userId,
+		"contactId": contactId,
+	})
+
+	cur2 := contactDoc.FindOne(context.Background(), bson.M{
+		"userId":    contactId,
+		"contactId": userId,
+	})
+
+	if cur1.Err() != nil || cur2.Err() != nil {
+		fmt.Println(cur1.Err().Error(), cur2.Err().Error())
+		return errors.New("")
+	}
+
+	var contact1, contact2 models.Contact
+
+	err1 := cur1.Decode(&contact1)
+	err2 := cur1.Decode(&contact2)
+
+	if err1 != nil {
+		fmt.Println(err1, "err1")
+		return errors.New("")
+	}
+
+	var newPoint int
+	if isAdd {
+		newPoint = contact1.RelativePoint + 1
+	} else {
+		newPoint = contact1.RelativePoint - 1
+	}
+	_, err := contactDoc.UpdateByID(context.Background(), utils.ToObjectId(contact1.Id.Hex()), bson.M{
+		"$set": bson.M{"relativePoint": newPoint},
+	})
+	if err != nil {
+		fmt.Println(err, "err1")
+		return errors.New("")
+	}
+
+	// maybe blank, so don't trigger error
+	fmt.Println(err2, "err2")
+
+	if err2 == nil {
+		if isAdd {
+			newPoint = contact2.RelativePoint + 1
+		} else {
+			newPoint = contact2.RelativePoint - 1
+		}
+
+		_, err := contactDoc.UpdateByID(context.Background(), utils.ToObjectId(contact2.Id.Hex()), bson.M{
+			"$set": bson.M{"relativePoint": newPoint},
+		})
+
+		if err != nil {
+			fmt.Println(err, "err2")
+			return errors.New("")
+		}
 	}
 
 	return nil

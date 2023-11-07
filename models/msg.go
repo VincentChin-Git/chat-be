@@ -12,7 +12,7 @@ type Msg struct {
 	ReceiveId   *primitive.ObjectID `json:"receiveId,omitempty" bson:"receiveId,omitempty"`
 	Content     string              `json:"content,omitempty" bson:"content,omitempty"`
 	ContentType string              `json:"contentType,omitempty" bson:"contentType,omitempty"` /* text / image / video */
-	Status      string              `json:"status,omitempty" bson:"status,omitempty"`           /* failed / sending / sent / received / read / recalled / deletedS / deletedR / deletedAll */
+	Status      string              `json:"status,omitempty" bson:"status,omitempty"`           /* sent / received / read / recalled / deletedS / deletedR / deletedAll */
 	CreatedAt   *time.Time          `json:"createdAt,omitempty" bson:"createdAt,omitempty"`
 	UpdatedAt   *time.Time          `json:"updatedAt,omitempty" bson:"updatedAt,omitempty"`
 }

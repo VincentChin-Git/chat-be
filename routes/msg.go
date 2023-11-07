@@ -14,6 +14,7 @@ func msgRoutes() chi.Router {
 	// get
 	r.Get("/getMsgs", controllers.GetMsgs)
 	r.Get("/getOverviewMsg", controllers.GetOverviewMsg)
+	r.Get("/getUnreadMsg", controllers.GetUnreadMsg)
 
 	// post
 	r.Post("/sendMsg", controllers.SendMsg)

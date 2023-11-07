@@ -25,9 +25,11 @@ func GetMsgs(userId string, contactId string, skip int, limit int) ([]models.Msg
 
 	matchStage := bson.D{
 		primitive.E{
-			Key: "$or", Value: bson.A{
-				[]bson.M{{"senderId": uOId}, {"receiveId": cOId}},
-				[]bson.M{{"receiveId": uOId}, {"senderId": cOId}},
+			Key: "$match", Value: bson.M{
+				"$or": []bson.M{
+					{"senderId": uOId, "receiveId": cOId},
+					{"receiveId": uOId, "senderId": cOId},
+				},
 			},
 		},
 	}
@@ -55,6 +57,7 @@ func GetMsgs(userId string, contactId string, skip int, limit int) ([]models.Msg
 		var item models.Msg
 		err := cur.Decode(&item)
 		if err != nil {
+			fmt.Println(err, "errGetMsg1")
 			return []models.Msg{}, errors.New("")
 		}
 		res = append(res, item)
@@ -63,12 +66,13 @@ func GetMsgs(userId string, contactId string, skip int, limit int) ([]models.Msg
 	return res, nil
 }
 
-func UpdateMsgStatus(_id string, status string) error {
+func UpdateMsgStatus(_id string, status string, userId string) error {
 	if _id == "" || status == "" {
 		return errors.New("Invalid Info")
 	}
+	msgDoc := storage.ClientDatabase.Collection("msgs")
 
-	validStatus := []string{"failed", "sending", "sent", "received", "read", "recalled", "deletedS", "deletedR", "deletedAll"}
+	validStatus := []string{"received", "read", "recalled", "deletedS", "deletedR"} // deletedAll
 	isErr := true
 	for _, char := range validStatus {
 		if char == status {
@@ -80,8 +84,57 @@ func UpdateMsgStatus(_id string, status string) error {
 		return errors.New("Invalid Info")
 	}
 
-	msgDoc := storage.ClientDatabase.Collection("msgs")
-	_, err := msgDoc.UpdateByID(context.Background(), utils.ToObjectId(_id), bson.M{
+	// validate update status
+	var msgData models.Msg
+	cur := msgDoc.FindOne(context.Background(), bson.M{"_id": utils.ToObjectId(_id)})
+	if cur.Err() != nil {
+		fmt.Println(cur.Err().Error())
+		return errors.New("")
+	}
+
+	err := cur.Decode(&msgData)
+	if err != nil {
+		fmt.Println(err.Error())
+		return errors.New("")
+	}
+
+	statusErr := true
+	switch status {
+	case "received":
+		if msgData.Status == "sent" {
+			statusErr = false
+		}
+	case "read":
+		if msgData.Status == "received" {
+			statusErr = false
+		}
+	case "recalled":
+		if msgData.Status == "sent" || msgData.Status == "received" || msgData.Status == "read" || msgData.Status == "deletedR" {
+			statusErr = false
+		}
+	case "deletedS":
+		if msgData.Status != "deletedS" && userId == (*msgData.SenderId).Hex() {
+			statusErr = false
+			if msgData.Status == "deletedR" {
+				status = "deletedAll"
+			}
+		}
+	case "deletedR":
+		if msgData.Status != "deletedR" && userId == (*msgData.ReceiveId).Hex() {
+			statusErr = false
+			if msgData.Status == "deletedS" {
+				status = "deletedAll"
+			}
+		}
+	default:
+		break
+	}
+
+	if statusErr {
+		return errors.New("Status Error")
+	}
+
+	_, err = msgDoc.UpdateByID(context.Background(), utils.ToObjectId(_id), bson.M{
 		"$set": bson.M{
 			"status": status,
 		},
@@ -93,9 +146,24 @@ func UpdateMsgStatus(_id string, status string) error {
 	return nil
 }
 
-func SendMsg(senderId string, receiveId string, data models.Msg) (string, error) {
-	if senderId == "" || receiveId == "" || data.Content == "" || data.ContentType == "" {
+func SendMsg(senderId string, receiveId string, content string, contentType string) (string, error) {
+	if senderId == "" || receiveId == "" || content == "" || contentType == "" {
 		return "", errors.New("Invalid Info")
+	}
+
+	allowedContentType := []string{"text", "image", "video"}
+	isTypeErr := true
+
+	for _, t := range allowedContentType {
+		if t == contentType {
+			isTypeErr = false
+			break
+		}
+	}
+
+	if isTypeErr {
+		fmt.Println("typeError", contentType)
+		return "", errors.New("Invalid Message Type")
 	}
 
 	userDoc := storage.ClientDatabase.Collection("users")
@@ -109,22 +177,26 @@ func SendMsg(senderId string, receiveId string, data models.Msg) (string, error)
 		return "", errors.New("Invalid User")
 	}
 
+	var msgData models.Msg
+
 	senderOId := utils.ToObjectId(senderId)
 	receiveOId := utils.ToObjectId(receiveId)
 	timeNow := time.Now()
-	data.SenderId = &senderOId
-	data.ReceiveId = &receiveOId
-	data.Status = "sending"
-	data.CreatedAt = &timeNow
-	data.UpdatedAt = &timeNow
+	msgData.SenderId = &senderOId
+	msgData.ReceiveId = &receiveOId
+	msgData.Content = content
+	msgData.ContentType = contentType
+	msgData.Status = "sent"
+	msgData.CreatedAt = &timeNow
+	msgData.UpdatedAt = &timeNow
 
 	msgDoc := storage.ClientDatabase.Collection("msgs")
-	result, err := msgDoc.InsertOne(context.Background(), data)
+	result, err := msgDoc.InsertOne(context.Background(), msgData)
 	if err != nil {
 		return "", errors.New("")
 	}
 
-	_id := result.InsertedID.(string)
+	_id := result.InsertedID.(primitive.ObjectID).Hex()
 
 	return _id, nil
 }
@@ -141,25 +213,24 @@ func GetOverviewMsg(userId string, skip int, limit int) ([]GetOverviewMsgType, e
 
 	msgDoc := storage.ClientDatabase.Collection("msgs")
 
-	statusMatch := []string{""}
+	// statusMatch := []string{"sent", "received", "read", ""}
 	matchStage := bson.D{
 		primitive.E{
-			Key: "$match", Value: []bson.M{
-				{"$or": bson.A{
-					bson.M{
+			Key: "$match", Value: bson.M{
+				"$or": []bson.M{
+					{
 						"senderId": utils.ToObjectId(userId),
 						"status": bson.M{
-							"$not": "deletedS",
+							"$not": bson.M{"$in": []string{"recalled", "deletedS", "deletedAll"}},
 						},
 					},
-					bson.M{
+					{
 						"receiveId": utils.ToObjectId(userId),
 						"status": bson.M{
-							"$not": "deletedR",
+							"$not": bson.M{"$in": []string{"recalled", "deletedR", "deletedAll"}},
 						},
 					},
-				}},
-				{"status": bson.M{"$in": statusMatch}},
+				},
 			},
 		},
 	}
@@ -231,6 +302,7 @@ func GetOverviewMsg(userId string, skip int, limit int) ([]GetOverviewMsgType, e
 	})
 
 	if err != nil {
+		fmt.Println(err)
 		return []GetOverviewMsgType{}, errors.New("")
 	}
 
@@ -254,5 +326,49 @@ func GetOverviewMsg(userId string, skip int, limit int) ([]GetOverviewMsgType, e
 	}
 
 	return res, nil
+}
 
+type GetUnreadMsgType struct {
+	ContactId primitive.ObjectID `json:"contactId,omitempty" bson:"contactId,omitempty"`
+	Unread    int                `json:"unread,omitempty" bson:"unread,omitempty"`
+}
+
+func GetUnreadMsg(userId string) ([]GetUnreadMsgType, error) {
+	msgDoc := storage.ClientDatabase.Collection("msgs")
+	matchStage := bson.D{
+		primitive.E{
+			Key: "$match", Value: bson.M{
+				"receiveId": utils.ToObjectId(userId),
+				"status":    "sent",
+			},
+		},
+	}
+	groupStage := bson.D{
+		primitive.E{
+			Key: "$group", Value: bson.M{
+				"_id":       "$senderId",
+				"contactId": bson.M{"$first": "$senderId"},
+				"unread": bson.M{
+					"$sum": 1,
+				},
+			},
+		},
+	}
+	unread := []GetUnreadMsgType{}
+	cur, err := msgDoc.Aggregate(context.Background(), mongo.Pipeline{matchStage, groupStage})
+	for cur.Next(context.Background()) {
+
+		var tempUnread GetUnreadMsgType
+		err := cur.Decode(&tempUnread)
+		if err != nil {
+			fmt.Println(err)
+			return []GetUnreadMsgType{}, errors.New("")
+		}
+		unread = append(unread, tempUnread)
+	}
+	if err != nil {
+		fmt.Println(err.Error())
+		return []GetUnreadMsgType{}, errors.New("")
+	}
+	return unread, nil
 }

@@ -16,6 +16,11 @@ func GetContacts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	sortBy := r.URL.Query().Get("sortBy")
+	if sortBy == "" {
+		sortBy = "point"
+	}
+
 	page, errPage := strconv.Atoi(r.URL.Query().Get("page"))
 	pageSize, errPageSize := strconv.Atoi(r.URL.Query().Get("pageSize"))
 
@@ -29,7 +34,7 @@ func GetContacts(w http.ResponseWriter, r *http.Request) {
 
 	skip := utils.ToSkipRow(page, pageSize)
 
-	result, err := services.GetContacts(_id, skip, pageSize)
+	result, err := services.GetContacts(_id, sortBy, skip, pageSize)
 
 	if err == nil {
 		utils.JsonResponse(w, result, http.StatusOK)

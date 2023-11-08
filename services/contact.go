@@ -28,8 +28,19 @@ type ContactElemRes struct {
 	LastActive time.Time          `json:"lastActive,omitempty" bson:"lastActive,omitempty"`
 }
 
-func GetContacts(_id string, skip int, limit int) ([]ContactElemRes, error) {
+func GetContacts(_id string, sortBy string, skip int, limit int) ([]ContactElemRes, error) {
 	contactDoc := storage.ClientDatabase.Collection("contacts")
+
+	var sortKey string
+	var sortValue int
+
+	if sortBy == "name" {
+		sortKey = "contactInfo.nickname"
+		sortValue = 1
+	} else if sortBy == "point" {
+		sortKey = "relativePoint"
+		sortValue = -1
+	}
 
 	// get contact list and populate each row with corresponding user info
 	matchStage := bson.D{
@@ -43,7 +54,7 @@ func GetContacts(_id string, skip int, limit int) ([]ContactElemRes, error) {
 	sortStage := bson.D{
 		primitive.E{
 			Key: "$sort", Value: bson.M{
-				"relativePoint": -1,
+				sortKey: sortValue,
 			},
 		},
 	}
@@ -77,11 +88,11 @@ func GetContacts(_id string, skip int, limit int) ([]ContactElemRes, error) {
 	}
 	cur, err := contactDoc.Aggregate(context.Background(), mongo.Pipeline{
 		matchStage,
+		lookupStage,
+		unwindStage,
 		sortStage,
 		skipStage,
 		limitStage,
-		lookupStage,
-		unwindStage,
 	})
 	if err != nil {
 		fmt.Println("errGetContactList", err.Error())

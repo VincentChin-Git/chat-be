@@ -11,6 +11,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -229,7 +230,12 @@ func ChangePassword(_id string, oldPass string, newPass string) error {
 
 func SearchUser(key string, value string) (models.User, error) {
 	userDoc := storage.ClientDatabase.Collection("users")
-	cur := userDoc.FindOne(context.Background(), bson.M{key: value, "status": "active"})
+	var cur *mongo.SingleResult
+	if key == "_id" {
+		cur = userDoc.FindOne(context.Background(), bson.M{key: utils.ToObjectId(value), "status": "active"})
+	} else {
+		cur = userDoc.FindOne(context.Background(), bson.M{key: value, "status": "active"})
+	}
 	if cur.Err() != nil {
 		fmt.Println(cur.Err())
 		return models.User{}, nil

@@ -10,6 +10,7 @@ func contactRoutes() chi.Router {
 	r := chi.NewRouter()
 
 	// get
+	r.Get("/getContacts", controllers.GetContacts)
 	r.Get("/getContact", controllers.GetContact)
 
 	// post

@@ -20,7 +20,7 @@ type contactElem struct {
 }
 
 type ContactElemRes struct {
-	ContactId  primitive.ObjectID `json:"contactId,omitempty" bson:"contactId,omitempty"`
+	ContactId  primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
 	Mobile     string             `json:"mobile,omitempty" bson:"mobile,omitempty"`
 	Nickname   string             `json:"nickname,omitempty" bson:"nickname,omitempty"`
 	Avatar     string             `json:"avatar,omitempty" bson:"avatar,omitempty"`
@@ -28,7 +28,7 @@ type ContactElemRes struct {
 	LastActive time.Time          `json:"lastActive,omitempty" bson:"lastActive,omitempty"`
 }
 
-func GetContact(_id string, skip int, limit int) ([]ContactElemRes, error) {
+func GetContacts(_id string, skip int, limit int) ([]ContactElemRes, error) {
 	contactDoc := storage.ClientDatabase.Collection("contacts")
 
 	// get contact list and populate each row with corresponding user info
@@ -37,6 +37,13 @@ func GetContact(_id string, skip int, limit int) ([]ContactElemRes, error) {
 			Key: "$match", Value: bson.M{
 				"userId": utils.ToObjectId(_id),
 				"status": "active",
+			},
+		},
+	}
+	sortStage := bson.D{
+		primitive.E{
+			Key: "$sort", Value: bson.M{
+				"relativePoint": -1,
 			},
 		},
 	}
@@ -68,7 +75,14 @@ func GetContact(_id string, skip int, limit int) ([]ContactElemRes, error) {
 			Key: "$limit", Value: limit,
 		},
 	}
-	cur, err := contactDoc.Aggregate(context.Background(), mongo.Pipeline{matchStage, skipStage, limitStage, lookupStage, unwindStage})
+	cur, err := contactDoc.Aggregate(context.Background(), mongo.Pipeline{
+		matchStage,
+		sortStage,
+		skipStage,
+		limitStage,
+		lookupStage,
+		unwindStage,
+	})
 	if err != nil {
 		fmt.Println("errGetContactList", err.Error())
 		return nil, errors.New("")
@@ -76,7 +90,7 @@ func GetContact(_id string, skip int, limit int) ([]ContactElemRes, error) {
 
 	defer cur.Close(context.Background())
 
-	var contactList []ContactElemRes
+	contactList := []ContactElemRes{}
 	for cur.Next(context.Background()) {
 		var item contactElem
 		err := cur.Decode(&item)
@@ -102,6 +116,116 @@ func GetContact(_id string, skip int, limit int) ([]ContactElemRes, error) {
 		contactList = append(contactList, res)
 	}
 	return contactList, nil
+}
+
+func GetContact(param string, userId string, skip int, limit int) ([]ContactElemRes, error) {
+
+	if param == "" {
+		return []ContactElemRes{}, errors.New("Invalid Info")
+	}
+
+	contactDoc := storage.ClientDatabase.Collection("contacts")
+
+	matchStage1 := bson.D{
+		primitive.E{
+			Key: "$match", Value: bson.M{
+				"userId": utils.ToObjectId(userId),
+				"status": "active",
+			},
+		},
+	}
+	lookupStage := bson.D{
+		primitive.E{
+			Key: "$lookup", Value: bson.M{
+				"from":         "users",
+				"localField":   "contactId",
+				"foreignField": "_id",
+				"as":           "contactInfo",
+			},
+		},
+	}
+	unwindStage := bson.D{
+		primitive.E{
+			Key: "$unwind", Value: bson.M{
+				"path":                       "$contactInfo",
+				"preserveNullAndEmptyArrays": false,
+			},
+		},
+	}
+	matchStage2 := bson.D{
+		primitive.E{
+			Key: "$match", Value: bson.M{
+				"$or": []bson.M{
+					{"contactInfo.nickname": bson.M{
+						"$regex":   param,
+						"$options": "i",
+					}},
+					{"contactInfo.mobile": bson.M{
+						"$regex":   param,
+						"$options": "i",
+					}},
+				},
+			},
+		},
+	}
+	sortStage := bson.D{
+		primitive.E{
+			Key: "$sort", Value: bson.M{
+				"relativePoint": -1,
+			},
+		},
+	}
+	skipStage := bson.D{
+		primitive.E{
+			Key: "$skip", Value: skip,
+		},
+	}
+	limitStage := bson.D{
+		primitive.E{
+			Key: "$limit", Value: limit,
+		},
+	}
+
+	cur, err := contactDoc.Aggregate(context.Background(), mongo.Pipeline{
+		matchStage1,
+		lookupStage,
+		unwindStage,
+		matchStage2,
+		sortStage,
+		skipStage,
+		limitStage,
+	})
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	contactList := []ContactElemRes{}
+	for cur.Next(context.Background()) {
+		var item contactElem
+		err := cur.Decode(&item)
+		if err != nil {
+			fmt.Println("errGetContactElem", err.Error())
+		}
+
+		// get only active user
+		if item.ContactInfo.Status != "active" {
+			continue
+		}
+
+		lastActive := item.ContactInfo.LastActive
+		res := ContactElemRes{
+			ContactId:  item.ContactId,
+			Mobile:     item.ContactInfo.Mobile,
+			Avatar:     item.ContactInfo.Avatar,
+			Nickname:   item.ContactInfo.Nickname,
+			Describe:   item.ContactInfo.Describe,
+			LastActive: *lastActive,
+		}
+
+		contactList = append(contactList, res)
+	}
+	return contactList, nil
+
 }
 
 func AddContact(userId string, contactId string) (models.Contact, error) {

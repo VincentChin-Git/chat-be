@@ -9,7 +9,7 @@ import (
 	"strconv"
 )
 
-func GetContact(w http.ResponseWriter, r *http.Request) {
+func GetContacts(w http.ResponseWriter, r *http.Request) {
 	_id, ok := r.Context().Value(middleware.ContextKey("parsedId")).(string)
 	if !ok {
 		utils.JsonResponseError(w, "999999", "", http.StatusBadRequest)
@@ -29,7 +29,37 @@ func GetContact(w http.ResponseWriter, r *http.Request) {
 
 	skip := utils.ToSkipRow(page, pageSize)
 
-	result, err := services.GetContact(_id, skip, pageSize)
+	result, err := services.GetContacts(_id, skip, pageSize)
+
+	if err == nil {
+		utils.JsonResponse(w, result, http.StatusOK)
+	} else {
+		utils.JsonResponseError(w, "999999", err.Error(), http.StatusBadRequest)
+	}
+}
+
+func GetContact(w http.ResponseWriter, r *http.Request) {
+	_id, ok := r.Context().Value(middleware.ContextKey("parsedId")).(string)
+	if !ok {
+		utils.JsonResponseError(w, "999999", "", http.StatusBadRequest)
+		return
+	}
+
+	page, errPage := strconv.Atoi(r.URL.Query().Get("page"))
+	pageSize, errPageSize := strconv.Atoi(r.URL.Query().Get("pageSize"))
+	param := r.URL.Query().Get("param")
+
+	if errPage != nil {
+		page = 1
+	}
+
+	if errPageSize != nil {
+		pageSize = 10
+	}
+
+	skip := utils.ToSkipRow(page, pageSize)
+
+	result, err := services.GetContact(param, _id, skip, pageSize)
 
 	if err == nil {
 		utils.JsonResponse(w, result, http.StatusOK)

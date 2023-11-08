@@ -324,6 +324,7 @@ func GetOverviewMsg(userId string, skip int, limit int) ([]GetOverviewMsgType, e
 		}
 
 		item.MsgData = temp.MsgData
+		item.ContactData.Id = temp.ContactData.Id
 		item.ContactData.Mobile = temp.ContactData.Mobile
 		item.ContactData.Nickname = temp.ContactData.Nickname
 		item.ContactData.Avatar = temp.ContactData.Avatar

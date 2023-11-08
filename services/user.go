@@ -228,7 +228,7 @@ func ChangePassword(_id string, oldPass string, newPass string) error {
 	return nil
 }
 
-func SearchUser(key string, value string) (models.User, error) {
+func SearchUser(key string, value string, userId string) (models.User, error) {
 	userDoc := storage.ClientDatabase.Collection("users")
 	var cur *mongo.SingleResult
 	if key == "_id" {
@@ -247,6 +247,9 @@ func SearchUser(key string, value string) (models.User, error) {
 	if err != nil {
 		fmt.Println(err.Error())
 		return models.User{}, errors.New("")
+	}
+	if userTemp.Id.Hex() == userId {
+		return models.User{}, nil
 	}
 
 	userRes.Avatar = userTemp.Avatar

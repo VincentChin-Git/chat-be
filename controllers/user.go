@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 )
 
 type SignUpType struct {
@@ -132,7 +133,19 @@ func SearchUser(w http.ResponseWriter, r *http.Request) {
 	key := r.URL.Query().Get("key")
 	value := r.URL.Query().Get("value")
 
-	user, err := services.SearchUser(key, value)
+	token := ""
+	var err error
+	authHeader := strings.Split(r.Header.Get("Authorization"), "Bearer ")
+
+	if len(authHeader) == 2 {
+		token, err = utils.DecodeToken(authHeader[1])
+		if err != nil {
+			fmt.Println(err.Error())
+			token = ""
+		}
+	}
+
+	user, err := services.SearchUser(key, value, token)
 	if err == nil {
 		utils.JsonResponse(w, user, http.StatusOK)
 	} else {

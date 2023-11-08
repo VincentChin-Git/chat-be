@@ -59,6 +59,7 @@ func Signup(mobile string, username string, password string) (string, error) {
 		Mobile:     mobile,
 		Password:   passwordEncoded,
 		Nickname:   nickname,
+		Avatar:     "https://robohash.org/" + mobile + ".png?set=set4",
 		Status:     "active",
 		LastActive: &timeNow,
 		CreatedAt:  &timeNow,
@@ -132,11 +133,13 @@ func GetUserInfoByToken(userId string) (getUserInfoRes, error) {
 
 	userDataCur := storage.ClientDatabase.Collection("users").FindOne(context.Background(), bson.M{"_id": utils.ToObjectId(userId)})
 	if userDataCur.Err() != nil {
-		return blankData, errors.New("")
+		fmt.Println(userDataCur.Err().Error())
+		return blankData, nil
 	}
 	var userData models.User
 	err := userDataCur.Decode(&userData)
 	if err != nil {
+		fmt.Println(err.Error())
 		return blankData, errors.New("")
 	}
 

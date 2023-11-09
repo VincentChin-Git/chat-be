@@ -16,6 +16,7 @@ type Config struct {
 	AwsSecretKey    string
 	AwsBucketName   string
 	AwsBucketFolder string
+	AwsBucketPrefix string
 }
 
 func GetConfig() Config {
@@ -33,6 +34,7 @@ func GetConfig() Config {
 	awsSecretKey := os.Getenv("AwsSecretKey")
 	awsBucketName := os.Getenv("AwsBucketName")
 	awsBucketFolder := os.Getenv("AwsBucketFolder")
+	awsBucketPrefix := os.Getenv("AwsBucketPrefix")
 
 	temp := Config{
 		DatabaseURL:     databaseURL,
@@ -43,6 +45,7 @@ func GetConfig() Config {
 		AwsSecretKey:    awsSecretKey,
 		AwsBucketName:   awsBucketName,
 		AwsBucketFolder: awsBucketFolder,
+		AwsBucketPrefix: awsBucketPrefix,
 	}
 
 	return temp

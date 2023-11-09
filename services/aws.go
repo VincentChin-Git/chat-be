@@ -12,21 +12,26 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 )
 
-func uploadSignature(filename string, validExts []string, errMsg string) (string, error) {
+type uploadRes struct {
+	UploadUrl string `json:"uploadUrl,omitempty"`
+	ViewUrl   string `json:"viewUrl,omitempty"`
+}
+
+func uploadSignature(filename string, validExts []string, errMsg string) (uploadRes, error) {
 
 	if filename == "" {
-		return "", errors.New("Filename Error")
+		return uploadRes{}, errors.New("Filename Error")
 	}
 
 	// validate filetype
 	extension := filepath.Ext(filename)
 	if extension == "" {
-		return "", errors.New("Filename Error")
+		return uploadRes{}, errors.New("Filename Error")
 	}
 
 	extension = extension[1:]
 	if extension == "" {
-		return "", errors.New("Filename Error")
+		return uploadRes{}, errors.New("Filename Error")
 	}
 
 	isExtValid := false
@@ -37,7 +42,7 @@ func uploadSignature(filename string, validExts []string, errMsg string) (string
 		}
 	}
 	if !isExtValid {
-		return "", errors.New(errMsg)
+		return uploadRes{}, errors.New(errMsg)
 	}
 
 	configGet := config.GetConfig()
@@ -51,13 +56,14 @@ func uploadSignature(filename string, validExts []string, errMsg string) (string
 	url, err := r.Presign(5 * time.Minute)
 	if err != nil {
 		fmt.Println("Failed to generate a pre-signed url: ", err)
-		return "", errors.New("")
+		return uploadRes{}, errors.New("")
 	}
+	fullPath := configGet.AwsBucketPrefix + filename
 
-	return url, nil
+	return uploadRes{UploadUrl: url, ViewUrl: fullPath}, nil
 }
 
-func UploadImgSignature(filename string) (string, error) {
+func UploadImgSignature(filename string) (uploadRes, error) {
 
 	// config
 	validExts := []string{"jpg", "JPG", "jpeg", "JPEG", "png", "PNG", "pneg", "PNEG"}
@@ -66,7 +72,7 @@ func UploadImgSignature(filename string) (string, error) {
 	return uploadSignature(filename, validExts, errMsg)
 }
 
-func UploadVideoSignature(filename string) (string, error) {
+func UploadVideoSignature(filename string) (uploadRes, error) {
 
 	// config
 	validExts := []string{"mp4", "MP4"}

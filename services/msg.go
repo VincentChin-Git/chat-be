@@ -41,6 +41,13 @@ func GetMsgs(userId string, contactId string, skip int, limit int) ([]models.Msg
 			},
 		},
 	}
+	sortStage := bson.D{
+		primitive.E{
+			Key: "$sort", Value: bson.M{
+				"createdAt": -1,
+			},
+		},
+	}
 	skipStage := bson.D{
 		primitive.E{
 			Key: "$skip", Value: skip,
@@ -51,7 +58,12 @@ func GetMsgs(userId string, contactId string, skip int, limit int) ([]models.Msg
 			Key: "$limit", Value: limit,
 		},
 	}
-	cur, err := msgDoc.Aggregate(context.Background(), mongo.Pipeline{matchStage, skipStage, limitStage})
+	cur, err := msgDoc.Aggregate(context.Background(), mongo.Pipeline{
+		matchStage,
+		sortStage,
+		skipStage,
+		limitStage,
+	})
 
 	if err != nil {
 		fmt.Println(err, "errGetMsg")

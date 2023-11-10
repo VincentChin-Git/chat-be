@@ -308,7 +308,7 @@ func GetOverviewMsg(userId string, skip int, limit int) ([]GetOverviewMsgType, e
 			Key: "$addFields", Value: bson.M{
 				"dependId": bson.M{
 					"$cond": bson.A{
-						bson.M{"$eq": []string{"$senderId", userId}},
+						bson.M{"$eq": []any{"$senderId", utils.ToObjectId(userId)}},
 						"$receiveId",
 						"$senderId",
 					},

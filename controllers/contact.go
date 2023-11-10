@@ -123,29 +123,3 @@ func RemoveContact(w http.ResponseWriter, r *http.Request) {
 		utils.JsonResponseError(w, "999999", err.Error(), http.StatusBadRequest)
 	}
 }
-
-func UpdatePoint(w http.ResponseWriter, r *http.Request) {
-	userId, ok := r.Context().Value(middleware.ContextKey("parsedId")).(string)
-	if !ok {
-		utils.JsonResponseError(w, "999999", "", http.StatusBadRequest)
-		return
-	}
-
-	var ctx struct {
-		ContactId string `json:"contactId"`
-		IsAdd     bool   `json:"isAdd,omitempty"`
-	}
-	err := json.NewDecoder(r.Body).Decode(&ctx)
-	if err != nil {
-		utils.JsonResponseError(w, "999999", "", http.StatusBadRequest)
-		return
-	}
-
-	err = services.UpdatePoint(userId, ctx.ContactId, ctx.IsAdd)
-
-	if err == nil {
-		utils.JsonResponse(w, true, http.StatusOK)
-	} else {
-		utils.JsonResponseError(w, "999999", err.Error(), http.StatusBadRequest)
-	}
-}

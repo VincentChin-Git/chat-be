@@ -74,6 +74,20 @@ func UpdateMsgStatus(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func UpdateMsgToReceived(w http.ResponseWriter, r *http.Request) {
+	_id, ok := r.Context().Value(middleware.ContextKey("parsedId")).(string)
+	if !ok {
+		utils.JsonResponseError(w, "999999", "", http.StatusBadRequest)
+		return
+	}
+	err := services.UpdateMsgToReceived(_id)
+	if err != nil {
+		utils.JsonResponseError(w, "999999", err.Error(), http.StatusBadRequest)
+	} else {
+		utils.JsonResponse(w, true, http.StatusOK)
+	}
+}
+
 func SendMsg(w http.ResponseWriter, r *http.Request) {
 	var ctx struct {
 		ReceiveId   string `json:"receiveId"`

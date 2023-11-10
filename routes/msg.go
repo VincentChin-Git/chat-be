@@ -19,6 +19,7 @@ func msgRoutes() chi.Router {
 	// post
 	r.Post("/sendMsg", controllers.SendMsg)
 	r.Post("/updateMsgStatus", controllers.UpdateMsgStatus)
+	r.Post("/updateMsgToReceived", controllers.UpdateMsgToReceived)
 
 	return r
 }

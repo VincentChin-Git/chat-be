@@ -318,9 +318,12 @@ func RemoveContact(userId string, contactId string) error {
 	return nil
 }
 
-func UpdatePoint(userId string, contactId string, isAdd bool) error {
+func updatePoint(userId string, contactId string, isAdd bool, point int) error {
 
 	contactDoc := storage.ClientDatabase.Collection("contacts")
+	if point == 0 {
+		point = 1
+	}
 
 	cur1 := contactDoc.FindOne(context.Background(), bson.M{
 		"userId":    userId,
@@ -349,9 +352,9 @@ func UpdatePoint(userId string, contactId string, isAdd bool) error {
 
 	var newPoint int
 	if isAdd {
-		newPoint = contact1.RelativePoint + 1
+		newPoint = contact1.RelativePoint + point
 	} else {
-		newPoint = contact1.RelativePoint - 1
+		newPoint = contact1.RelativePoint - point
 	}
 	_, err := contactDoc.UpdateByID(context.Background(), utils.ToObjectId(contact1.Id.Hex()), bson.M{
 		"$set": bson.M{"relativePoint": newPoint},
@@ -366,9 +369,9 @@ func UpdatePoint(userId string, contactId string, isAdd bool) error {
 
 	if err2 == nil {
 		if isAdd {
-			newPoint = contact2.RelativePoint + 1
+			newPoint = contact2.RelativePoint + point
 		} else {
-			newPoint = contact2.RelativePoint - 1
+			newPoint = contact2.RelativePoint - point
 		}
 
 		_, err := contactDoc.UpdateByID(context.Background(), utils.ToObjectId(contact2.Id.Hex()), bson.M{

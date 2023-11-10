@@ -72,7 +72,7 @@ func GetMsgs(userId string, contactId string, skip int, limit int) ([]models.Msg
 
 	defer cur.Close(context.Background())
 
-	var res []models.Msg
+	res := []models.Msg{}
 	for cur.Next(context.Background()) {
 		var item models.Msg
 		err := cur.Decode(&item)
@@ -166,6 +166,26 @@ func UpdateMsgStatus(_id string, status string, userId string) error {
 	return nil
 }
 
+func UpdateMsgToReceived(_id string) error {
+
+	msgDoc := storage.ClientDatabase.Collection("msgs")
+	_, err := msgDoc.UpdateMany(context.Background(), bson.M{
+		"receiveId": utils.ToObjectId(_id),
+		"status":    "sent",
+	}, bson.M{
+		"$set": bson.M{
+			"status": "received",
+		},
+	})
+
+	if err != nil {
+		fmt.Println(err)
+		return errors.New("")
+	}
+
+	return nil
+}
+
 func SendMsg(senderId string, receiveId string, content string, contentType string) (string, error) {
 	if senderId == "" || receiveId == "" || content == "" || contentType == "" {
 		return "", errors.New("Invalid Info")
@@ -187,6 +207,26 @@ func SendMsg(senderId string, receiveId string, content string, contentType stri
 	}
 
 	userDoc := storage.ClientDatabase.Collection("users")
+	contactDoc := storage.ClientDatabase.Collection("contacts")
+
+	count, err := contactDoc.CountDocuments(context.Background(), bson.M{
+		"userId":    utils.ToObjectId(senderId),
+		"contactId": utils.ToObjectId(receiveId),
+		"status":    "active",
+	})
+
+	if err != nil {
+		return "", errors.New("")
+	}
+
+	// confirm added contact before send msg
+	if count == 0 {
+		_, err = AddContact(senderId, receiveId)
+		if err != nil {
+			return "", errors.New("")
+		}
+	}
+
 	senderCount, errS := userDoc.CountDocuments(context.Background(), bson.M{"_id": utils.ToObjectId(senderId)})
 	receiveCount, errR := userDoc.CountDocuments(context.Background(), bson.M{"_id": utils.ToObjectId(receiveId)})
 
@@ -217,6 +257,8 @@ func SendMsg(senderId string, receiveId string, content string, contentType stri
 	}
 
 	_id := result.InsertedID.(primitive.ObjectID).Hex()
+
+	_ = updatePoint(senderId, receiveId, true, 1)
 
 	return _id, nil
 }

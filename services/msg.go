@@ -325,6 +325,13 @@ func GetOverviewMsg(userId string, searchNickname string, skip int, limit int) (
 			},
 		},
 	}
+	sortStage2 := bson.D{
+		primitive.E{
+			Key: "$sort", Value: bson.M{
+				"msgData.createdAt": -1,
+			},
+		},
+	}
 	lookupStage := bson.D{
 		primitive.E{
 			Key: "$lookup", Value: bson.D{
@@ -369,6 +376,7 @@ func GetOverviewMsg(userId string, searchNickname string, skip int, limit int) (
 		sortStage,
 		addFieldStage,
 		groupStage,
+		sortStage2,
 		lookupStage,
 		unwindStage,
 	}

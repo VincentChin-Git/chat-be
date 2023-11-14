@@ -268,14 +268,14 @@ type GetOverviewMsgType struct {
 	ContactData models.User `json:"contactData,omitempty"`
 }
 
-func GetOverviewMsg(userId string, skip int, limit int) ([]GetOverviewMsgType, error) {
+func GetOverviewMsg(userId string, searchNickname string, skip int, limit int) ([]GetOverviewMsgType, error) {
 	if userId == "" {
 		return []GetOverviewMsgType{}, errors.New("Invalid Info")
 	}
 
 	msgDoc := storage.ClientDatabase.Collection("msgs")
 
-	// statusMatch := []string{"sent", "received", "read", ""}
+	// filter for corresponding user
 	matchStage := bson.D{
 		primitive.E{
 			Key: "$match", Value: bson.M{
@@ -296,6 +296,7 @@ func GetOverviewMsg(userId string, skip int, limit int) ([]GetOverviewMsgType, e
 			},
 		},
 	}
+
 	sortStage := bson.D{
 		primitive.E{
 			Key: "$sort", Value: bson.M{
@@ -342,6 +343,17 @@ func GetOverviewMsg(userId string, skip int, limit int) ([]GetOverviewMsgType, e
 			},
 		},
 	}
+	// validate for search nickname
+	matchStage2 := bson.D{
+		primitive.E{
+			Key: "$match", Value: bson.M{
+				"contactData.nickname": bson.M{
+					"$regex":   searchNickname,
+					"$options": "i",
+				},
+			},
+		},
+	}
 	skipStage := bson.D{
 		primitive.E{
 			Key: "$skip", Value: skip,
@@ -352,23 +364,29 @@ func GetOverviewMsg(userId string, skip int, limit int) ([]GetOverviewMsgType, e
 			Key: "$limit", Value: limit,
 		},
 	}
-	cur, err := msgDoc.Aggregate(context.Background(), mongo.Pipeline{
+	pipe := mongo.Pipeline{
 		matchStage,
 		sortStage,
 		addFieldStage,
 		groupStage,
 		lookupStage,
 		unwindStage,
-		skipStage,
-		limitStage,
-	})
+	}
+
+	if searchNickname != "" {
+		pipe = append(pipe, matchStage2)
+	}
+
+	pipe = append(pipe, skipStage, limitStage)
+
+	cur, err := msgDoc.Aggregate(context.Background(), pipe)
 
 	if err != nil {
 		fmt.Println(err)
 		return []GetOverviewMsgType{}, errors.New("")
 	}
 
-	var res []GetOverviewMsgType
+	res := []GetOverviewMsgType{}
 	for cur.Next(context.Background()) {
 		var temp, item GetOverviewMsgType
 		err = cur.Decode(&temp)

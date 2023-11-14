@@ -123,6 +123,8 @@ func GetOverviewMsg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	search := r.URL.Query().Get("search")
+
 	page, errPage := strconv.Atoi(r.URL.Query().Get("page"))
 	pageSize, errPageSize := strconv.Atoi(r.URL.Query().Get("pageSize"))
 
@@ -136,7 +138,7 @@ func GetOverviewMsg(w http.ResponseWriter, r *http.Request) {
 
 	skip := utils.ToSkipRow(page, pageSize)
 
-	result, err := services.GetOverviewMsg(_id, skip, pageSize)
+	result, err := services.GetOverviewMsg(_id, search, skip, pageSize)
 	if err != nil {
 		utils.JsonResponseError(w, "999999", err.Error(), http.StatusBadRequest)
 	} else {
